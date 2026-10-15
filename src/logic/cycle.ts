@@ -6,6 +6,14 @@ import type { Period } from './types';
 export const DEFAULT_CYCLE = 28;
 export const DEFAULT_PERIOD = 5;
 export const LUTEAL_DAYS = 14;
+/**
+ * Промежуток длиннее этого — не цикл, а пропуск в отметках (например,
+ * не отмечала с января по август). В средние, минимум, максимум и разброс
+ * он не входит, иначе прогноз ломается.
+ */
+export const MAX_CYCLE_DAYS = 60;
+
+export const isGap = (cycleLength: number) => cycleLength > MAX_CYCLE_DAYS;
 
 export type Phase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal';
 
@@ -63,11 +71,12 @@ const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
 /**
  * Средние по году year (по умолчанию — текущий). Цикл относится к году,
- * в котором он начался. Пока данных нет — 28 и 5 дней.
+ * в котором он начался. Пропуски в отметках (> 60 дней) не учитываются.
+ * Пока данных нет — 28 и 5 дней.
  */
 export const yearStats = (periods: Period[], year: number): Stats => {
   const cycles = completedCycles(periods)
-    .filter((c) => yearOf(c.start) === year)
+    .filter((c) => yearOf(c.start) === year && !isGap(c.length))
     .map((c) => c.length);
   const lengths = periods
     .filter((p) => p.end !== null && yearOf(p.start) === year)

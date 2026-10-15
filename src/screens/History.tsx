@@ -16,6 +16,18 @@ type View = { kind: 'year'; year: number } | { kind: 'archive' };
 const dayMonth = (d: string) => shortDate(d).split(',')[0];
 
 function CycleCard({ c }: { c: HistoryCycle }) {
+  // Пропуск в отметках: без полоски, в средние не входит
+  if (c.gap) {
+    return (
+      <li className="cycle-card is-gap">
+        <div className="cycle-head">
+          <b>{dayMonth(c.start)} — {dayMonth(c.end!)}</b>
+          <span>пропуск в отметках</span>
+        </div>
+        <p className="cycle-sub">Месячные {daysLabel(c.periodDays)} · промежуток {daysLabel(c.days)}, в средние не входит</p>
+      </li>
+    );
+  }
   const bar = barParts(c);
   const pct = (x: number) => `${(x * 100).toFixed(2)}%`;
   return (
@@ -86,7 +98,7 @@ export function History({ onBack }: { onBack: () => void }) {
           ) : (
             <ul className="archive-list">
               {years.map((y) => {
-                const n = yearCycles(periods, y, today).length;
+                const n = yearCycles(periods, y, today).filter((c) => !c.gap).length;
                 return (
                   <li key={y}>
                     <button className="archive-item" onClick={() => setView({ kind: 'year', year: y })}>

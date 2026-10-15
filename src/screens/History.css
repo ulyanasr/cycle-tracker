@@ -158,3 +158,13 @@
   font-weight: 700;
   color: var(--caption);
 }
+
+/* Пропуск в отметках — светлая карточка с пунктиром */
+.cycle-card.is-gap {
+  background: #fff;
+  border: 1.5px dashed var(--border);
+}
+
+.cycle-card.is-gap .cycle-head span {
+  color: var(--caption);
+}

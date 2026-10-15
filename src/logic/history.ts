@@ -1,5 +1,5 @@
 // «История циклов» (5.6): циклы выбранного года, новые сверху
-import { effectiveEnd, sortPeriods, yearStats } from './cycle';
+import { effectiveEnd, isGap, sortPeriods, yearStats } from './cycle';
 import { addDays, diffDays, yearOf, type DateStr } from './dates';
 import type { Period } from './types';
 
@@ -16,6 +16,8 @@ export interface HistoryCycle {
   current: boolean;
   /** Для текущего: ожидаемая длина (средний цикл) */
   expected: number | null;
+  /** Пропуск в отметках: длиннее 60 дней, в средние не входит */
+  gap: boolean;
 }
 
 export function yearCycles(periods: Period[], year: number, today: DateStr): HistoryCycle[] {
@@ -34,9 +36,10 @@ export function yearCycles(periods: Period[], year: number, today: DateStr): His
         periodDays,
         current: false,
         expected: null,
+        gap: isGap(diffDays(next.start, p.start)),
       });
     } else {
-      out.push({ start: p.start, end: null, days: diffDays(today, p.start) + 1, periodDays, current: true, expected: avg });
+      out.push({ start: p.start, end: null, days: diffDays(today, p.start) + 1, periodDays, current: true, expected: avg, gap: false });
     }
   });
   return out.reverse();
