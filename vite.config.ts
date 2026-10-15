@@ -2,8 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// base для GitHub Pages (путь репозитория) настроим на этапе деплоя
+// GitHub Pages открывает сайт по адресу https://<логин>.github.io/<репозиторий>/,
+// поэтому при сборке в GitHub Actions BASE_PATH = '/<репозиторий>/'. Локально — '/'.
 export default defineConfig({
+  base: process.env.BASE_PATH ?? '/',
   plugins: [
     react(),
     VitePWA({
