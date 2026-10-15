@@ -1,0 +1,213 @@
+.home-sub {
+  margin-top: 6px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.home-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-card);
+}
+
+/* ---------- Индиго-карточка ---------- */
+.card-indigo {
+  background: var(--indigo);
+  border-radius: var(--r-card);
+  padding: 18px 18px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-indigo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-indigo-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--on-indigo);
+}
+
+.card-indigo-value {
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: #fff;
+}
+
+/* Белый квадрат 92×92 «Средний цикл / 28 / дней» */
+.avg-square {
+  flex: none;
+  width: 92px;
+  height: 92px;
+  border-radius: 20px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.avg-square b {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.period-btn {
+  min-height: 48px;
+  border-radius: var(--r-pill);
+  background: #fff;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.period-btn i {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--coral);
+}
+
+.period-btn:active {
+  transform: scale(0.98);
+}
+
+/* ---------- «Тело сейчас» и «Спорт сегодня» ---------- */
+.phase-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap-card);
+}
+
+.card-teal,
+.card-lime {
+  border-radius: var(--r-card);
+  padding: 18px 16px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-teal h2,
+.card-lime h2 {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.card-teal {
+  background: var(--teal);
+  color: #fff;
+}
+
+.card-teal p {
+  color: var(--on-teal);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.card-lime {
+  background: var(--lime);
+  color: var(--on-lime);
+}
+
+.card-lime p {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* ---------- Календарь ---------- */
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 44px;
+}
+
+.cal-head h2 {
+  font-size: 19px;
+  white-space: nowrap;
+}
+
+.cal-head-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.cal-head .round-btn {
+  width: 44px;
+  height: 44px;
+}
+
+.pill-btn {
+  min-height: 44px;
+  padding: 0 13px;
+  border-radius: var(--r-pill);
+  background: var(--btn-gray);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pill-btn.is-black {
+  background: var(--text);
+  color: #fff;
+  padding: 0 18px;
+}
+
+.edit-hint {
+  background: var(--period-forecast);
+  color: var(--period-forecast-text);
+  border-radius: 18px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-pill);
+}
+
+.dot-period { background: var(--coral); }
+.dot-fertile { background: var(--fertile-2); }
+.dot-ovulation { background: var(--indigo); }

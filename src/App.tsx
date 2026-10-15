@@ -3,6 +3,7 @@ import { BottomNav } from './components/BottomNav';
 import { DiarySheet } from './components/DiarySheet';
 import { SideMenu } from './components/SideMenu';
 import { useSettings } from './db/hooks';
+import { todayStr } from './logic/dates';
 import { Onboarding } from './screens/Onboarding';
 import { Home } from './screens/Home';
 import { Notes } from './screens/Notes';
@@ -15,7 +16,7 @@ export function App() {
   // Экран, с которого открыли меню: туда возвращает «назад» из подэкранов
   const [base, setBase] = useState<'home' | 'notes'>('home');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [diaryOpen, setDiaryOpen] = useState(false);
+  const [diaryDate, setDiaryDate] = useState<string | null>(null);
   const settings = useSettings();
 
   // Пока база читается — пустой экран, чтобы не мигало приветствие
@@ -34,7 +35,7 @@ export function App() {
 
   return (
     <>
-      {screen === 'home' && <Home onMenu={openMenu} />}
+      {screen === 'home' && <Home onMenu={openMenu} onOpenDay={setDiaryDate} />}
       {screen === 'notes' && <Notes onMenu={openMenu} />}
       {screen === 'history' && (
         <SubScreen title="История циклов" onBack={() => setScreen(base)}>
@@ -50,7 +51,7 @@ export function App() {
       <BottomNav
         current={screen === 'home' || screen === 'notes' ? screen : null}
         onHome={() => goBase('home')}
-        onAdd={() => setDiaryOpen(true)}
+        onAdd={() => setDiaryDate(todayStr())}
         onNotes={() => goBase('notes')}
       />
 
@@ -60,7 +61,7 @@ export function App() {
         onHistory={() => openFromMenu('history')}
         onForecasts={() => openFromMenu('forecasts')}
       />
-      <DiarySheet open={diaryOpen} onClose={() => setDiaryOpen(false)} />
+      <DiarySheet date={diaryDate} onClose={() => setDiaryDate(null)} />
     </>
   );
 }

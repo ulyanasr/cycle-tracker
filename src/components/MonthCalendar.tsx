@@ -22,12 +22,16 @@ type Props = {
   onTap: (date: DateStr) => void;
   /** Заголовок с месяцем и, например, стрелками */
   header?: ReactNode;
+  /** Режим «Изменить»: дни до сегодня в пунктире, будущие бледнее */
+  editing?: boolean;
+  /** Что объявлять экранному диктору: отметка месячных или открытие дневника */
+  pressable?: boolean;
 };
 
 // Сетка месяца: круги 40px. Будущие дни не нажимаются (раздел 4)
-export function MonthCalendar({ month, kindOf, today, onTap, header }: Props) {
+export function MonthCalendar({ month, kindOf, today, onTap, header, editing = false, pressable = true }: Props) {
   return (
-    <section className="month-cal">
+    <section className={`month-cal ${editing ? 'is-editing' : ''}`}>
       {header}
       <div className="cal-grid" role="grid">
         {WEEKDAYS.map((w) => (
@@ -49,7 +53,7 @@ export function MonthCalendar({ month, kindOf, today, onTap, header }: Props) {
               className={`cal-day ${kind ? `is-${kind}` : ''} ${isToday ? 'is-today' : ''}`}
               disabled={future}
               aria-label={label}
-              aria-pressed={kind === 'period'}
+              aria-pressed={pressable ? kind === 'period' : undefined}
               onClick={() => onTap(date)}
             >
               {Number(date.slice(8))}

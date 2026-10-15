@@ -10,6 +10,7 @@
   grid-template-columns: repeat(7, 1fr);
   row-gap: 12px;
   justify-items: center;
+  isolation: isolate;
 }
 
 .cal-weekday {
@@ -67,6 +68,16 @@
 .cal-day.is-today { color: #fff; }
 .cal-day.is-today::before { background: var(--text); border-color: var(--text); }
 
-.cal-grid {
-  isolation: isolate;
+/* Сегодня: чёрный круг с тонким кольцом снаружи, как на макете */
+.cal-day.is-today::before {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--text);
+}
+
+/* Режим «Изменить» */
+.is-editing .cal-day:not(:disabled):not(.is-period):not(.is-today)::before {
+  border: 1.5px dashed rgba(242, 70, 58, 0.55);
+}
+
+.is-editing .cal-day:disabled {
+  opacity: 0.35;
 }
