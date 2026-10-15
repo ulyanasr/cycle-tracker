@@ -1,0 +1,43 @@
+/* Дизайн-токены из раздела 8 спецификации. Тема только светлая. */
+:root {
+  --font: 'Onest', -apple-system, system-ui, sans-serif;
+
+  --bg: #ffffff;
+  --text: #111114;
+  --text-2: #55556a;
+  --caption: #6e6e80;
+
+  --btn-gray: #f1f1f4;
+  --card-gray: #f6f6f8;
+  --border: #e3e3e8;
+
+  --indigo: #4b4fd1;
+  --on-indigo: #e3e4ff;
+  --teal: #0e4a47;
+  --on-teal: #d7eeec;
+  --lime: #ddf247;
+  --on-lime: #1d2300;
+
+  --coral: #f2463a;
+  --period-forecast: #ffe0dc;
+  --period-forecast-text: #a12a20;
+  --fertile: #dde2fc;
+  --fertile-text: #2e31a0;
+  --fertile-2: #c9d0fa;
+
+  --nav-bg: #111114;
+  --nav-dark: #2e2e36;
+  --nav-dark-border: #4a4a55;
+
+  --r-big: 28px;
+  --r-card: 26px;
+  --r-list: 22px;
+  --r-pill: 999px;
+
+  --pad-screen: 20px;
+  --gap-card: 12px;
+  --gap-section: 24px;
+
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}

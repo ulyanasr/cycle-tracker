@@ -1,0 +1,13 @@
+# Служебные файлы macOS
+.DS_Store
+
+# Зависимости и сборка
+node_modules/
+dist/
+dev-dist/
+
+# Локальные настройки Claude Code
+.claude/
+
+# Старый черновик на чистом HTML, не часть проекта
+_old-prototype/

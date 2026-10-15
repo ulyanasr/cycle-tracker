@@ -1,0 +1,103 @@
+/* Боковое меню и нижняя панель дневника: затемнённый фон + выезжающий блок */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.overlay.is-open {
+  pointer-events: auto;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 17, 20, 0.4);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.is-open .backdrop {
+  opacity: 1;
+}
+
+.overlay-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.overlay-head h2 {
+  font-size: 28px;
+}
+
+/* Меню слева: 310px, радиус справа 32px */
+.drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(310px, 86vw);
+  background: var(--bg);
+  border-radius: 0 32px 32px 0;
+  padding: calc(var(--safe-top) + 16px) var(--pad-screen)
+    calc(var(--safe-bottom) + 20px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-section);
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow-y: auto;
+}
+
+.is-open .drawer {
+  transform: none;
+}
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-item {
+  min-height: 56px;
+  padding: 0 18px;
+  border-radius: var(--r-list);
+  background: var(--card-gray);
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Дневник снизу: радиус сверху 32px, «ручка» */
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 92dvh;
+  background: var(--bg);
+  border-radius: 32px 32px 0 0;
+  padding: 10px var(--pad-screen) calc(var(--safe-bottom) + 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow-y: auto;
+}
+
+.is-open .sheet {
+  transform: none;
+}
+
+.sheet-handle {
+  width: 40px;
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: var(--border);
+  margin: 0 auto 4px;
+}
