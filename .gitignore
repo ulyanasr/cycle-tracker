@@ -11,3 +11,6 @@ dev-dist/
 
 # Старый черновик на чистом HTML, не часть проекта
 _old-prototype/
+
+# Служебные файлы проверок Playwright
+.playwright-mcp/
