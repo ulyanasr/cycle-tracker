@@ -1,0 +1,102 @@
+import 'fake-indexeddb/auto';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { CycleDB } from './db';
+import {
+  getDayLog,
+  getPeriods,
+  getSettings,
+  isEmptyDayLog,
+  normalizeDayLog,
+  rememberMedNames,
+  saveDayLog,
+  savePeriods,
+  updateSettings,
+} from './repo';
+
+let db: CycleDB;
+let n = 0;
+beforeEach(() => {
+  db = new CycleDB(`test-${++n}`); // отдельная база на каждый тест
+});
+afterEach(async () => {
+  await db.delete();
+});
+
+describe('месячные', () => {
+  it('пустая база — пустой список', async () => {
+    expect(await getPeriods(db)).toEqual([]);
+  });
+  it('возвращаются отсортированными по началу', async () => {
+    await savePeriods(db, [
+      { id: 'b', start: '2026-10-01', end: null },
+      { id: 'a', start: '2026-09-03', end: '2026-09-07' },
+    ]);
+    expect((await getPeriods(db)).map((p) => p.id)).toEqual(['a', 'b']);
+  });
+  it('сохранение заменяет весь список (после склейки старых записей не остаётся)', async () => {
+    await savePeriods(db, [
+      { id: 'a', start: '2026-10-01', end: '2026-10-03' },
+      { id: 'b', start: '2026-10-05', end: '2026-10-07' },
+    ]);
+    await savePeriods(db, [{ id: 'a', start: '2026-10-01', end: '2026-10-07' }]);
+    expect(await getPeriods(db)).toEqual([{ id: 'a', start: '2026-10-01', end: '2026-10-07' }]);
+  });
+  it('end = null сохраняется как null', async () => {
+    await savePeriods(db, [{ id: 'a', start: '2026-10-13', end: null }]);
+    expect((await getPeriods(db))[0].end).toBeNull();
+  });
+});
+
+describe('дневник дня', () => {
+  it('сохраняется и читается по дате', async () => {
+    await saveDayLog(db, { date: '2026-10-15', flow: 'heavy', pain: 3, moods: ['Стресс'] });
+    expect(await getDayLog(db, '2026-10-15')).toEqual({
+      date: '2026-10-15', flow: 'heavy', pain: 3, moods: ['Стресс'],
+    });
+  });
+  it('пустые поля отбрасываются', () => {
+    expect(
+      normalizeDayLog({
+        date: '2026-10-15', moods: [], note: '   ', meds: [{ name: '  ', dose: '400 мг' }],
+      }),
+    ).toEqual({ date: '2026-10-15' });
+  });
+  it('у лекарства обрезаются пробелы, пустая дозировка убирается', () => {
+    expect(normalizeDayLog({ date: 'd', meds: [{ name: ' Ибупрофен ', dose: ' ', time: '09:30' }] }))
+      .toEqual({ date: 'd', meds: [{ name: 'Ибупрофен', time: '09:30' }] });
+  });
+  it('пустой дневник не создаётся, а существующий — удаляется', async () => {
+    expect(isEmptyDayLog({ date: 'd', note: '' })).toBe(true);
+    await saveDayLog(db, { date: '2026-10-15', note: '' });
+    expect(await getDayLog(db, '2026-10-15')).toBeUndefined();
+
+    await saveDayLog(db, { date: '2026-10-15', pain: 2 });
+    await saveDayLog(db, { date: '2026-10-15' }); // сняла все отметки
+    expect(await getDayLog(db, '2026-10-15')).toBeUndefined();
+  });
+  it('повторное сохранение заменяет запись целиком (снятое поле исчезает)', async () => {
+    await saveDayLog(db, { date: '2026-10-15', pain: 4, note: 'болит' });
+    await saveDayLog(db, { date: '2026-10-15', note: 'болит' });
+    expect(await getDayLog(db, '2026-10-15')).toEqual({ date: '2026-10-15', note: 'болит' });
+  });
+  it('названия лекарств попадают в подсказки', async () => {
+    await saveDayLog(db, { date: '2026-10-15', meds: [{ name: 'Ибупрофен', dose: '400 мг' }] });
+    expect((await getSettings(db)).knownMedNames).toEqual(['Ибупрофен']);
+  });
+});
+
+describe('настройки', () => {
+  it('по умолчанию: онбординг не пройден, экспорта не было', async () => {
+    expect(await getSettings(db)).toEqual({ onboardingDone: false, lastExportAt: null, knownMedNames: [] });
+  });
+  it('частичное обновление не затирает остальные поля', async () => {
+    await updateSettings(db, { knownMedNames: ['Но-шпа'] });
+    await updateSettings(db, { onboardingDone: true });
+    expect(await getSettings(db)).toEqual({ onboardingDone: true, lastExportAt: null, knownMedNames: ['Но-шпа'] });
+  });
+  it('подсказки: без дублей без учёта регистра, последние — первыми', async () => {
+    await rememberMedNames(db, ['Ибупрофен', 'Но-шпа']);
+    await rememberMedNames(db, ['ибупрофен', '  ', 'Парацетамол']);
+    expect((await getSettings(db)).knownMedNames).toEqual(['ибупрофен', 'Парацетамол', 'Но-шпа']);
+  });
+});
