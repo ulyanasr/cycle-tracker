@@ -19,3 +19,6 @@ export const yearOf = (s: DateStr): number => Number(s.slice(0, 4));
 // Строки одного формата сравниваются как даты
 export const isBefore = (a: DateStr, b: DateStr) => a < b;
 export const inRange = (d: DateStr, from: DateStr, to: DateStr) => d >= from && d <= to;
+
+/** Сегодня по часам устройства */
+export const todayStr = (): DateStr => toStr(new Date());

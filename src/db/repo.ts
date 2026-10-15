@@ -25,6 +25,21 @@ export async function savePeriods(db: CycleDB, periods: Period[]): Promise<void>
   });
 }
 
+/**
+ * Правка месячных: читает актуальный список и записывает результат
+ * в одной транзакции. Так два быстрых тапа подряд не затрут друг друга.
+ */
+export async function updatePeriods(
+  db: CycleDB,
+  change: (periods: Period[]) => Period[],
+): Promise<void> {
+  await db.transaction('rw', db.periods, async () => {
+    const next = change(await getPeriods(db));
+    await db.periods.clear();
+    await db.periods.bulkPut(next);
+  });
+}
+
 /* ---------------- Дневник дня ---------------- */
 
 export const getDayLog = (db: CycleDB, date: string): Promise<DayLog | undefined> =>

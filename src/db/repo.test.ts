@@ -10,6 +10,7 @@ import {
   rememberMedNames,
   saveDayLog,
   savePeriods,
+  updatePeriods,
   updateSettings,
 } from './repo';
 
@@ -40,6 +41,18 @@ describe('месячные', () => {
     ]);
     await savePeriods(db, [{ id: 'a', start: '2026-10-01', end: '2026-10-07' }]);
     expect(await getPeriods(db)).toEqual([{ id: 'a', start: '2026-10-01', end: '2026-10-07' }]);
+  });
+  it('два быстрых тапа подряд не затирают друг друга', async () => {
+    const { toggleDay } = await import('../logic/periods');
+    const today = '2026-10-15';
+    let i = 0;
+    const id = () => `n${++i}`;
+    // Запускаем одновременно, не дожидаясь первого
+    await Promise.all([
+      updatePeriods(db, (ps) => toggleDay(ps, '2026-10-01', today, id)),
+      updatePeriods(db, (ps) => toggleDay(ps, '2026-10-02', today, id)),
+    ]);
+    expect((await getPeriods(db)).map((p) => [p.start, p.end])).toEqual([['2026-10-01', '2026-10-02']]);
   });
   it('end = null сохраняется как null', async () => {
     await savePeriods(db, [{ id: 'a', start: '2026-10-13', end: null }]);

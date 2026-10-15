@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { DiarySheet } from './components/DiarySheet';
 import { SideMenu } from './components/SideMenu';
+import { useSettings } from './db/hooks';
+import { Onboarding } from './screens/Onboarding';
 import { Home } from './screens/Home';
 import { Notes } from './screens/Notes';
 import { SubScreen } from './screens/SubScreen';
@@ -14,6 +16,11 @@ export function App() {
   const [base, setBase] = useState<'home' | 'notes'>('home');
   const [menuOpen, setMenuOpen] = useState(false);
   const [diaryOpen, setDiaryOpen] = useState(false);
+  const settings = useSettings();
+
+  // Пока база читается — пустой экран, чтобы не мигало приветствие
+  if (!settings) return null;
+  if (!settings.onboardingDone) return <Onboarding />;
 
   const goBase = (s: 'home' | 'notes') => {
     setBase(s);
