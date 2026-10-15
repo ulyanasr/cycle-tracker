@@ -81,3 +81,18 @@ h3 {
   font-size: 15px;
   line-height: 1.4;
 }
+
+/* Главная чёрная кнопка: «Начать», «Сохранить» */
+.btn-black {
+  width: 100%;
+  min-height: 56px;
+  border-radius: var(--r-pill);
+  background: var(--text);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.btn-black:active {
+  transform: scale(0.98);
+}

@@ -1,0 +1,300 @@
+/* Панель дневника: прокручиваемое содержимое + «Сохранить» снизу */
+.sheet.diary {
+  height: 94dvh;
+  padding: 10px 0 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.diary-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 8px var(--pad-screen) 40px; /* над «Сохранить» минимум 40px */
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.diary-footer {
+  padding: 12px var(--pad-screen) calc(var(--safe-bottom) + 16px);
+  background: var(--bg);
+}
+
+.diary-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.diary-head h2 {
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.diary-sub {
+  margin-top: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+/* «Месячные сегодня» */
+.diary-period {
+  background: var(--card-gray);
+  border-radius: var(--r-list);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.diary-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+}
+
+.diary-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.diary-toggle i {
+  flex: none;
+  width: 52px;
+  height: 32px;
+  border-radius: var(--r-pill);
+  background: #d9d9de;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.diary-toggle i::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s;
+}
+
+.diary-toggle input:checked + i {
+  background: var(--coral);
+}
+
+.diary-toggle input:checked + i::after {
+  transform: translateX(20px);
+}
+
+.diary-toggle input:focus-visible + i {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+/* Блоки */
+.diary-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.diary-block h3 {
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.diary-block-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.diary-caption {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--caption);
+}
+
+.diary-block h3.diary-caption-title {
+  font-size: 15px;
+  color: var(--caption);
+}
+
+/* Шкала 1–5 */
+.scale {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.scale-btn {
+  min-height: 48px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.scale-btn.is-on {
+  border: 2px solid var(--text);
+}
+
+.scale-btn.is-dark {
+  color: #fff;
+}
+
+.scale-label {
+  color: var(--indigo);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin-top: -2px;
+}
+
+/* Чипы */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.chip.is-on {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+}
+
+.chip.is-gray {
+  background: var(--btn-gray);
+  border-color: var(--btn-gray);
+}
+
+.chip.is-black {
+  background: var(--text);
+  border-color: var(--text);
+  color: #fff;
+}
+
+.chip:disabled {
+  opacity: 0.4;
+}
+
+/* Лекарства */
+.med-card {
+  background: var(--fertile);
+  border-radius: var(--r-list);
+  padding: 14px 10px 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.med-card div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.med-card b {
+  font-size: 16px;
+}
+
+.med-card span {
+  font-size: 14px;
+  color: var(--fertile-text);
+}
+
+.med-remove {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--fertile-text);
+}
+
+.med-add {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  border: 1.5px dashed var(--fertile-2);
+  color: var(--indigo);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.med-form {
+  background: var(--card-gray);
+  border-radius: var(--r-list);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.med-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--caption);
+  min-width: 0;
+}
+
+.med-form input,
+.diary-note {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  font: inherit;
+  font-size: 16px; /* меньше 16px — iOS приближает страницу при фокусе */
+  color: var(--text);
+}
+
+.med-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.med-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.diary-note {
+  resize: vertical;
+  line-height: 1.4;
+}
