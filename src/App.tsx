@@ -36,7 +36,7 @@ export function App() {
   return (
     <>
       {screen === 'home' && <Home onMenu={openMenu} onOpenDay={setDiaryDate} />}
-      {screen === 'notes' && <Notes onMenu={openMenu} />}
+      {screen === 'notes' && <Notes onMenu={openMenu} onOpenDay={setDiaryDate} />}
       {screen === 'history' && (
         <SubScreen title="История циклов" onBack={() => setScreen(base)}>
           <p className="placeholder">Средние, разброс и список циклов появятся на этапе 8.</p>

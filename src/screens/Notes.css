@@ -1,0 +1,142 @@
+.notes-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: -6px;
+}
+
+.notes-caption {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--caption);
+}
+
+.filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-pill {
+  min-height: 44px;
+  padding: 0 15px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.filter-pill.is-on {
+  background: var(--text);
+  border-color: var(--text);
+  color: #fff;
+}
+
+.notes-empty {
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.notes-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-card);
+}
+
+/* Карточка записи: #F6F6F8, радиус 22 */
+.note-card {
+  width: 100%;
+  text-align: left;
+  background: var(--card-gray);
+  border-radius: var(--r-list);
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.note-card:active {
+  transform: scale(0.99);
+}
+
+.note-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.note-head b {
+  font-size: 18px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.note-head span {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--caption);
+  white-space: nowrap;
+}
+
+.note-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--coral);
+}
+
+.note-card dl {
+  display: grid;
+  /* Колонка подписей 84px; шире — только если «Самочувствие» не влезает */
+  grid-template-columns: minmax(84px, max-content) 1fr;
+  gap: 8px 12px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+/* «подпись — значение»: строки участвуют в общей сетке карточки */
+.note-row {
+  display: contents;
+}
+
+.note-row dt {
+  color: var(--caption);
+  font-weight: 600;
+}
+
+.note-row dd {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.note-row dd.is-note {
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.score-bars {
+  display: inline-flex;
+  gap: 3px;
+  flex: none;
+}
+
+.score-bars i {
+  width: 13px;
+  height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--border);
+}
+
+.score-bars i.is-on {
+  background: var(--indigo);
+}
