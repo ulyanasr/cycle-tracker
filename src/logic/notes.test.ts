@@ -30,9 +30,18 @@ describe('карточка записи', () => {
     ]);
     expect(noteRows(logs[0])[0]).toEqual({ label: 'Месячные', kind: 'text', text: 'Обильные' });
   });
+  it('краткие подписи — начало подписей из раздела 7', async () => {
+    const { SCALE_LABELS } = await import('./scales');
+    const { SHORT_LABELS } = await import('./notes');
+    for (const kind of ['pain', 'pms', 'wellbeing'] as const) {
+      for (const s of [1, 2, 3, 4, 5] as const) {
+        expect(SCALE_LABELS[kind][s].toLowerCase().startsWith(SHORT_LABELS[kind][s])).toBe(true);
+      }
+    }
+  });
   it('ПМС и самочувствие', () => {
     expect(noteRows({ date: 'd', pms: 2, wellbeing: 3 })).toEqual([
-      { label: 'ПМС', kind: 'score', score: 2, text: 'лёгкий' },
+      { label: 'ПМС', kind: 'score', score: 2, text: 'лёгкие проявления' },
       { label: 'Самочувствие', kind: 'score', score: 3, text: 'так себе' },
     ]);
   });
