@@ -62,16 +62,6 @@
   gap: 8px;
 }
 
-.menu-item {
-  min-height: 56px;
-  padding: 0 18px;
-  border-radius: var(--r-list);
-  background: var(--card-gray);
-  text-align: left;
-  font-size: 16px;
-  font-weight: 600;
-}
-
 /* Дневник снизу: радиус сверху 32px, «ручка» */
 .sheet {
   position: absolute;

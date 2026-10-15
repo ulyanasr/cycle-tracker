@@ -1,13 +1,16 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { toggleDay } from '../logic/periods';
 import { CycleDB } from './db';
 import {
+  getAllDayLogs,
   getDayLog,
   getPeriods,
   getSettings,
   isEmptyDayLog,
   normalizeDayLog,
   rememberMedNames,
+  replaceAll,
   saveDayLog,
   savePeriods,
   updatePeriods,
@@ -43,7 +46,6 @@ describe('месячные', () => {
     expect(await getPeriods(db)).toEqual([{ id: 'a', start: '2026-10-01', end: '2026-10-07' }]);
   });
   it('два быстрых тапа подряд не затирают друг друга', async () => {
-    const { toggleDay } = await import('../logic/periods');
     const today = '2026-10-15';
     let i = 0;
     const id = () => `n${++i}`;
@@ -111,5 +113,20 @@ describe('настройки', () => {
     await rememberMedNames(db, ['Ибупрофен', 'Но-шпа']);
     await rememberMedNames(db, ['ибупрофен', '  ', 'Парацетамол']);
     expect((await getSettings(db)).knownMedNames).toEqual(['ибупрофен', 'Парацетамол', 'Но-шпа']);
+  });
+});
+
+describe('восстановление из бэкапа', () => {
+  it('заменяет все данные, старые записи не остаются', async () => {
+    await savePeriods(db, [{ id: 'old', start: '2026-01-01', end: '2026-01-05' }]);
+    await saveDayLog(db, { date: '2026-01-02', pain: 2 });
+    await replaceAll(db, {
+      periods: [{ id: 'new', start: '2026-09-01', end: null }],
+      dayLogs: [{ date: '2026-09-02', note: 'из файла' }],
+      settings: { onboardingDone: true, lastExportAt: '2026-10-01T08:00:00.000Z', knownMedNames: ['Но-шпа'] },
+    });
+    expect(await getPeriods(db)).toEqual([{ id: 'new', start: '2026-09-01', end: null }]);
+    expect(await getAllDayLogs(db)).toEqual([{ date: '2026-09-02', note: 'из файла' }]);
+    expect(await getSettings(db)).toEqual({ onboardingDone: true, lastExportAt: '2026-10-01T08:00:00.000Z', knownMedNames: ['Но-шпа'] });
   });
 });

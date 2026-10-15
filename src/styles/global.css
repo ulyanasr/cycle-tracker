@@ -96,3 +96,9 @@ h3 {
 .btn-black:active {
   transform: scale(0.98);
 }
+
+/* Заголовки подэкранов: «История циклов» влезает в одну строку */
+.screen-title.is-compact {
+  font-size: 38px;
+  letter-spacing: -0.03em;
+}

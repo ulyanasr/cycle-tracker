@@ -118,3 +118,18 @@ export async function rememberMedNames(db: CycleDB, names: string[]): Promise<vo
   });
   await updateSettings(db, { knownMedNames: merged });
 }
+
+/* ---------------- Восстановление из бэкапа ---------------- */
+
+/** Полная замена всех данных одной транзакцией: либо всё, либо ничего */
+export async function replaceAll(
+  db: CycleDB,
+  data: { periods: Period[]; dayLogs: DayLog[]; settings: Settings },
+): Promise<void> {
+  await db.transaction('rw', db.periods, db.dayLogs, db.settings, async () => {
+    await Promise.all([db.periods.clear(), db.dayLogs.clear(), db.settings.clear()]);
+    await db.periods.bulkPut(data.periods);
+    await db.dayLogs.bulkPut(data.dayLogs);
+    await db.settings.put({ key: 'app', ...data.settings });
+  });
+}

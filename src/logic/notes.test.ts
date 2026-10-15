@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { noteRows, notesFeed, shortDate } from './notes';
+import { noteRows, notesFeed, shortDate, SHORT_LABELS } from './notes';
+import { SCALE_LABELS } from './scales';
 import type { DayLog, Period } from './types';
 
 const today = '2026-10-15';
@@ -30,9 +31,7 @@ describe('карточка записи', () => {
     ]);
     expect(noteRows(logs[0])[0]).toEqual({ label: 'Месячные', kind: 'text', text: 'Обильные' });
   });
-  it('краткие подписи — начало подписей из раздела 7', async () => {
-    const { SCALE_LABELS } = await import('./scales');
-    const { SHORT_LABELS } = await import('./notes');
+  it('краткие подписи — начало подписей из раздела 7', () => {
     for (const kind of ['pain', 'pms', 'wellbeing'] as const) {
       for (const s of [1, 2, 3, 4, 5] as const) {
         expect(SCALE_LABELS[kind][s].toLowerCase().startsWith(SHORT_LABELS[kind][s])).toBe(true);

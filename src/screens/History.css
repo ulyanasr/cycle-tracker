@@ -1,0 +1,160 @@
+.year-switch {
+  display: flex;
+  gap: 8px;
+}
+
+.year-switch button {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--caption);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.year-switch button.is-on {
+  background: var(--text);
+  border-color: var(--text);
+  color: #fff;
+}
+
+/* Три карточки: Цикл / Месячные / Разброс */
+.history-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: -4px;
+}
+
+.h-stat {
+  border-radius: 22px;
+  padding: 14px 12px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+
+.h-stat span,
+.h-stat small {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.h-stat b {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.h-stat.is-indigo { background: var(--indigo); color: var(--on-indigo); }
+.h-stat.is-indigo b { color: #fff; }
+.h-stat.is-coral { background: var(--coral); }
+.h-stat.is-teal { background: var(--teal); color: var(--on-teal); }
+.h-stat.is-teal b { color: #fff; }
+
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-card);
+}
+
+.section-caption {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--caption);
+}
+
+.history-empty {
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.cycle-list,
+.archive-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-card);
+}
+
+.cycle-card {
+  background: var(--card-gray);
+  border-radius: var(--r-list);
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cycle-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.cycle-head b {
+  font-size: 18px;
+}
+
+.cycle-head span {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Полоска: 35 дней = 100% ширины; красная — месячные, сиреневая — остальное */
+.cycle-bar {
+  display: flex;
+  height: 12px;
+}
+
+.cycle-bar i {
+  height: 100%;
+}
+
+.cycle-bar i:first-child {
+  border-radius: var(--r-pill) 0 0 var(--r-pill);
+}
+
+.cycle-bar i:last-child {
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
+}
+
+.cycle-bar .is-period { background: var(--coral); }
+.cycle-bar .is-rest { background: var(--fertile-2); }
+.cycle-bar .is-remaining { background: var(--border); }
+
+.cycle-sub {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.archive-item {
+  width: 100%;
+  min-height: 64px;
+  padding: 0 18px;
+  border-radius: var(--r-list);
+  background: var(--card-gray);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.archive-item b {
+  font-size: 20px;
+}
+
+.archive-item span {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--caption);
+}

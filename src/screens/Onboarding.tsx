@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { CycleRing } from '../components/CycleRing';
 import { BackIcon, CalendarIcon, LockIcon, PencilIcon } from '../components/Icons';
+import { ImportButton } from '../components/ImportButton';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { db } from '../db/db';
 import { usePeriods } from '../db/hooks';
@@ -44,10 +45,8 @@ export function Onboarding() {
         </ul>
         <div className="onb-actions">
           <button className="btn-black" onClick={() => setStep(1)}>Начать</button>
-          {/* Импорт подключим на этапе 8 */}
-          <button className="btn-link" onClick={() => alert('Импорт появится на этапе 8')}>
-            У меня есть бэкап — импортировать
-          </button>
+          {/* После импорта onboardingDone = true, и App сам покажет главную */}
+          <ImportButton className="btn-link">У меня есть бэкап — импортировать</ImportButton>
         </div>
       </main>
     );

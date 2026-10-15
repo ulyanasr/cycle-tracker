@@ -1,0 +1,95 @@
+.menu-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.menu-stat {
+  border-radius: 22px;
+  padding: 14px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #fff;
+}
+
+.menu-stat span {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.menu-stat b {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.menu-stat.is-indigo { background: var(--indigo); }
+.menu-stat.is-indigo span { color: var(--on-indigo); opacity: 1; }
+.menu-stat.is-coral { background: var(--coral); }
+
+/* Пункты меню: иконка в плашке 48px + текст */
+.menu-list {
+  gap: 4px;
+}
+
+.menu-item {
+  min-height: 64px;
+  padding: 8px 10px;
+  border-radius: var(--r-list);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+
+.menu-item:active {
+  background: var(--card-gray);
+}
+
+.menu-icon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: var(--btn-gray);
+  display: grid;
+  place-items: center;
+}
+
+.menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.menu-text small {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--on-lime);
+}
+
+.menu-item.is-lime {
+  background: var(--lime);
+  color: var(--on-lime);
+  padding: 12px 10px;
+}
+
+.menu-item.is-lime .menu-icon {
+  background: #fff;
+}
+
+.menu-item:disabled {
+  opacity: 0.5;
+}
+
+.menu-footnote {
+  margin-top: auto;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--caption);
+}

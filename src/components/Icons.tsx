@@ -78,3 +78,28 @@ export const LockIcon = (p: IconProps) => (
     <path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3" />
   </Svg>
 );
+
+export const ChartIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 20h16M7 20v-6M11.5 20V5M16 20v-9" />
+  </Svg>
+);
+
+export const DownloadIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 4v11M7 10.5l5 5 5-5M6 20h12" />
+  </Svg>
+);
+
+export const UploadIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 16V5M7 9.5l5-5 5 5M6 20h12" />
+  </Svg>
+);
+
+export const InfoIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 11v5.5M12 7.6v.1" />
+  </Svg>
+);

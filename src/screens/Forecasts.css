@@ -1,0 +1,54 @@
+.forecast-lead {
+  margin-top: 14px;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+
+.forecast-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-card);
+}
+
+.forecast-card {
+  background: var(--card-gray);
+  border-radius: var(--r-list);
+  padding: 18px 18px 20px 16px;
+  display: flex;
+  gap: 14px;
+}
+
+.forecast-card i {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--r-pill);
+  margin-top: 4px;
+}
+
+.forecast-card h2,
+.forecast-note h2 {
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.forecast-card p,
+.forecast-note p {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+
+.forecast-note {
+  background: var(--lime);
+  color: var(--on-lime);
+  border-radius: var(--r-list);
+  padding: 18px;
+}
+
+.forecast-note p {
+  color: var(--on-lime);
+}

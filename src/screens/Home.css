@@ -211,3 +211,20 @@
 .dot-period { background: var(--coral); }
 .dot-fertile { background: var(--fertile-2); }
 .dot-ovulation { background: var(--indigo); }
+
+/* Баннер бэкапа над календарём */
+.backup-banner {
+  width: 100%;
+  min-height: 52px;
+  margin-bottom: 20px;
+  padding: 0 18px;
+  border-radius: var(--r-list);
+  background: var(--lime);
+  color: var(--on-lime);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}

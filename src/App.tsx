@@ -7,7 +7,8 @@ import { todayStr } from './logic/dates';
 import { Onboarding } from './screens/Onboarding';
 import { Home } from './screens/Home';
 import { Notes } from './screens/Notes';
-import { SubScreen } from './screens/SubScreen';
+import { Forecasts } from './screens/Forecasts';
+import { History } from './screens/History';
 
 type Screen = 'home' | 'notes' | 'history' | 'forecasts';
 
@@ -37,16 +38,8 @@ export function App() {
     <>
       {screen === 'home' && <Home onMenu={openMenu} onOpenDay={setDiaryDate} />}
       {screen === 'notes' && <Notes onMenu={openMenu} onOpenDay={setDiaryDate} />}
-      {screen === 'history' && (
-        <SubScreen title="История циклов" onBack={() => setScreen(base)}>
-          <p className="placeholder">Средние, разброс и список циклов появятся на этапе 8.</p>
-        </SubScreen>
-      )}
-      {screen === 'forecasts' && (
-        <SubScreen title="Как считаются прогнозы" onBack={() => setScreen(base)}>
-          <p className="placeholder">Описание прогнозов появится на этапе 8.</p>
-        </SubScreen>
-      )}
+      {screen === 'history' && <History onBack={() => setScreen(base)} />}
+      {screen === 'forecasts' && <Forecasts onBack={() => setScreen(base)} />}
 
       <BottomNav
         current={screen === 'home' || screen === 'notes' ? screen : null}

@@ -4,9 +4,10 @@ import { useMemo, useState } from 'react';
 import { BackIcon, MenuIcon } from '../components/Icons';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { db } from '../db/db';
-import { usePeriods } from '../db/hooks';
+import { exportBackup, useBackupData } from '../db/backupIO';
 import { updatePeriods } from '../db/repo';
 import { useToday } from '../hooks/useToday';
+import { backupBanner } from '../logic/backup';
 import { dayKind, forecast, type Status } from '../logic/cycle';
 import { toDate, type DateStr } from '../logic/dates';
 import { homeSummary } from '../logic/home';
@@ -41,7 +42,12 @@ function statusText(s: Status): { label: string; value: string } {
 
 export function Home({ onMenu, onOpenDay }: Props) {
   const today = useToday();
-  const periods = usePeriods() ?? [];
+  // Все данные сразу: экспорт из баннера должен стартовать без чтения базы
+  const data = useBackupData();
+  const periods = data?.periods ?? [];
+  const banner = data
+    ? backupBanner(today, data.settings.lastExportAt, data.periods.length + data.dayLogs.length > 0)
+    : null;
   const [month, setMonth] = useState(() => monthOf(today));
   const [editing, setEditing] = useState(false);
 
@@ -119,6 +125,14 @@ export function Home({ onMenu, onOpenDay }: Props) {
       </section>
 
       <div>
+        {banner && (
+          <button
+            className="backup-banner"
+            onClick={() => data && exportBackup(data).catch(() => alert('Не получилось сохранить файл. Попробуй ещё раз.'))}
+          >
+            {banner} <span aria-hidden="true">→</span>
+          </button>
+        )}
         <MonthCalendar
           month={month}
           today={today}
