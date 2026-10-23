@@ -9,7 +9,6 @@
   padding: 8px 14px;
   border-radius: var(--r-pill);
   background: var(--nav-bg);
-  border: 1px solid var(--nav-bg);
   box-shadow: 0 10px 30px rgba(17, 17, 20, 0.24);
 }
 

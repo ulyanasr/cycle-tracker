@@ -8,13 +8,12 @@ import { exportBackup, useBackupData } from '../db/backupIO';
 import { updatePeriods } from '../db/repo';
 import { useToday } from '../hooks/useToday';
 import { backupBanner } from '../logic/backup';
-import { dayKind, forecast, type Status } from '../logic/cycle';
+import { dayKind, forecast } from '../logic/cycle';
 import { toDate, type DateStr } from '../logic/dates';
 import { homeSummary } from '../logic/home';
 import { capitalize, monthCells, monthName, monthOf, shiftMonth } from '../logic/months';
 import { finishPeriod, startPeriod, toggleDay } from '../logic/periods';
-import { PHASE_TITLE } from '../logic/phaseTexts';
-import { daysLabel, plural } from '../logic/plural';
+import { plural } from '../logic/plural';
 import './Home.css';
 
 type Props = {
@@ -25,20 +24,6 @@ type Props = {
 
 // «Ср, 14 октября»: date-fns даёт «ср», первую букву делаем заглавной
 const dateLabel = (date: DateStr) => capitalize(format(toDate(date), 'EEEEEE, d MMMM', { locale: ru }));
-
-/** Левая часть индиго-карточки */
-function statusText(s: Status): { label: string; value: string } {
-  switch (s.kind) {
-    case 'period':
-      return { label: 'Месячные', value: `${s.day}-й день` };
-    case 'delay':
-      return { label: 'Задержка', value: `${s.days} дн.` };
-    case 'until':
-      return { label: 'До месячных', value: s.days === 0 ? 'сегодня' : daysLabel(s.days) };
-    default:
-      return { label: 'До месячных', value: '—' };
-  }
-}
 
 export function Home({ onMenu, onOpenDay }: Props) {
   const today = useToday();
@@ -53,7 +38,7 @@ export function Home({ onMenu, onOpenDay }: Props) {
 
   const summary = useMemo(() => homeSummary(periods, today), [periods, today]);
   const f = useMemo(() => forecast(periods), [periods]);
-  const { label, value } = statusText(summary.status);
+  const { label, value } = summary.card;
 
   // В режиме «Изменить» прогноз не рисуется, чтобы его пунктир не путался с пунктиром для отметки
   const kindOf = (d: DateStr) => {
@@ -77,9 +62,9 @@ export function Home({ onMenu, onOpenDay }: Props) {
       </div>
 
       <div>
-        {summary.phase ? (
+        {summary.title ? (
           <>
-            <h1 className="screen-title">{PHASE_TITLE[summary.phase]}</h1>
+            <h1 className="screen-title">{summary.title}</h1>
             <p className="home-sub">{summary.cycleDay}-й день цикла</p>
           </>
         ) : (

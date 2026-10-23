@@ -1,9 +1,9 @@
 // Блоки дневника: переключатель, шкала 1–5, чипы, лекарства
-import { useEffect, useId, useRef } from 'react';
+import { useId, useRef, useState } from 'react';
 import { medDetails, suggestMedName } from '../../logic/meds';
 import { SCALE_LABELS, SCALE_TITLE, SCORE_COLOR, SCORES, type ScaleKind } from '../../logic/scales';
 import type { Medication, Score } from '../../logic/types';
-import { CloseIcon } from '../Icons';
+import { CheckIcon, CloseIcon } from '../Icons';
 
 export function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -70,57 +70,47 @@ export function Chips({
   );
 }
 
-export type MedDraft = { name: string; dose: string; time: string } | null;
-
-/** Черновик в лекарство; пустое название — null */
-export function draftToMed(d: MedDraft): Medication | null {
-  if (!d || !d.name.trim()) return null;
-  return { name: d.name.trim(), ...(d.dose.trim() ? { dose: d.dose.trim() } : {}), ...(d.time ? { time: d.time } : {}) };
-}
-
-/**
- * Черновик формы хранит родитель: если нажать «Сохранить», не нажав
- * «Добавить», введённое лекарство не потеряется.
- */
+/** Список лекарств дня и форма «+ Лекарство» (5.3) */
 export function MedsField({
   meds,
   known,
-  draft,
-  onDraft,
   onChange,
+  onRemember,
 }: {
   meds: Medication[];
   known: string[];
-  draft: MedDraft;
-  onDraft: (d: MedDraft) => void;
   onChange: (meds: Medication[]) => void;
+  /** «Добавить» сразу сохраняет название в подсказки */
+  onRemember: (name: string) => void;
 }) {
-  const hint = draft ? suggestMedName(draft.name, known) : null;
-  const hints = hint ? [hint] : [];
-  const formRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [dose, setDose] = useState('');
+  const [time, setTime] = useState('');
+  const doseRef = useRef<HTMLInputElement>(null);
+  const id = useId();
 
-  // На iPhone клавиатура закрывает низ экрана, и подсказки под полем оказываются
-  // под ней. Когда клавиатура открылась, поднимаем форму к верху дневника.
-  const revealHints = () =>
-    setTimeout(() => {
-      const form = formRef.current;
-      const scroller = form?.closest('.diary-scroll');
-      if (!form || !scroller) return;
-      const top = scroller.scrollTop + form.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 12;
-      scroller.scrollTo({ top });
-    }, 300);
+  const suggestion = suggestMedName(name, known);
+  // Хвост рисуем, только если ввод не кончается пробелом — иначе он отъедет от текста
+  const tail = suggestion && name === name.trimEnd() ? suggestion.slice(name.trim().length) : '';
 
-  // При открытии формы — сразу; onFocus — если поле тронули снова после прокрутки
-  const formOpen = draft !== null;
-  useEffect(() => {
-    if (formOpen) revealHints();
-  }, [formOpen]);
-  const set = (patch: Partial<NonNullable<MedDraft>>) => draft && onDraft({ ...draft, ...patch });
+  const close = () => {
+    setOpen(false);
+    setName('');
+    setDose('');
+    setTime('');
+  };
   const add = () => {
-    const med = draftToMed(draft);
-    if (!med) return;
-    onChange([...meds, med]);
-    onDraft(null);
+    const n = name.trim();
+    if (!n) return;
+    onChange([...meds, { name: n, ...(dose.trim() ? { dose: dose.trim() } : {}), ...(time ? { time } : {}) }]);
+    onRemember(n);
+    close();
+  };
+  // pointerdown + preventDefault: поле не теряет фокус, клавиатура не закрывается
+  const accept = (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    if (suggestion) setName(suggestion);
   };
 
   return (
@@ -138,42 +128,59 @@ export function MedsField({
         </div>
       ))}
 
-      {draft ? (
-        <div className="med-form" ref={formRef}>
-          <label>
-            <span>Название</span>
+      {open ? (
+        <div className="med-form">
+          <div className={`med-field is-floating ${name ? 'has-value' : ''}`}>
+            <label htmlFor={`${id}-name`}>Название</label>
+            <span className="med-ghost" aria-hidden="true">
+              <span className="med-ghost-typed">{name}</span>
+              {tail && <span key={suggestion} className="med-ghost-tail">{tail}</span>}
+            </span>
             <input
-              value={draft.name}
-              onChange={(e) => set({ name: e.target.value })}
-              onFocus={revealHints}
-              autoFocus
+              id={`${id}-name`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  doseRef.current?.focus();
+                }
+              }}
+              enterKeyHint="next"
               autoComplete="off"
+              autoCapitalize="sentences"
+              autoFocus
             />
-          </label>
-          {hints.length > 0 && (
-            <div className="chips">
-              {hints.map((h) => (
-                <button key={h} type="button" className="chip is-gray" onClick={() => set({ name: h })}>{h}</button>
-              ))}
-            </div>
-          )}
+            {suggestion && (
+              <button
+                type="button"
+                className="med-accept"
+                aria-label={`Вставить ${suggestion}`}
+                onPointerDown={accept}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={accept}
+              >
+                <CheckIcon size={18} /> Вставить
+              </button>
+            )}
+          </div>
           <div className="med-form-row">
-            <label>
-              <span>Дозировка</span>
-              <input value={draft.dose} onChange={(e) => set({ dose: e.target.value })} placeholder="400 мг" />
-            </label>
-            <label>
-              <span>Время</span>
-              <input type="time" value={draft.time} onChange={(e) => set({ time: e.target.value })} />
-            </label>
+            <div className="med-field">
+              <label htmlFor={`${id}-dose`}>Дозировка</label>
+              <input id={`${id}-dose`} ref={doseRef} value={dose} onChange={(e) => setDose(e.target.value)} placeholder="400 мг" />
+            </div>
+            <div className="med-field">
+              <label htmlFor={`${id}-time`}>Время</label>
+              <input id={`${id}-time`} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            </div>
           </div>
           <div className="med-form-actions">
-            <button type="button" className="chip is-gray" onClick={() => onDraft(null)}>Отмена</button>
-            <button type="button" className="chip is-black" onClick={add} disabled={!draft.name.trim()}>Добавить</button>
+            <button type="button" className="med-btn is-cancel" onClick={close}>Отмена</button>
+            <button type="button" className="med-btn is-add" onClick={add}>Добавить</button>
           </div>
         </div>
       ) : (
-        <button type="button" className="med-add" onClick={() => onDraft({ name: '', dose: '', time: '' })}>+ Лекарство</button>
+        <button type="button" className="med-add" onClick={() => setOpen(true)}>+ Лекарство</button>
       )}
     </section>
   );

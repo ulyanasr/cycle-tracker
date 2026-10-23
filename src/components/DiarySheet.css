@@ -17,14 +17,14 @@
   gap: 26px;
 }
 
-/* Запас снизу, чтобы форму лекарства можно было поднять над клавиатурой */
-.diary-scroll:has(.med-form) {
-  padding-bottom: 45vh;
-}
-
 .diary-footer {
   padding: 12px var(--pad-screen) calc(var(--safe-bottom) + 16px);
   background: var(--bg);
+}
+
+.sheet-handle,
+.diary-head {
+  touch-action: none; /* вертикальный жест здесь — свайп панели, а не прокрутка */
 }
 
 .diary-head {
@@ -199,16 +199,6 @@
   border-color: var(--btn-gray);
 }
 
-.chip.is-black {
-  background: var(--text);
-  border-color: var(--text);
-  color: #fff;
-}
-
-.chip:disabled {
-  opacity: 0.4;
-}
-
 /* Лекарства */
 .med-card {
   background: var(--fertile);
@@ -258,23 +248,164 @@
 .med-form {
   background: var(--card-gray);
   border-radius: var(--r-list);
-  padding: 14px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-.med-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.med-form-row {
+  display: grid;
+  /* minmax(0, …): иначе колонка не уже содержимого и поле времени на iOS вылезает за край */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* Поле: белое, 60px, радиус 16, подпись внутри сверху */
+.med-field {
+  position: relative;
+  height: 60px;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+  transition: border-color 0.18s;
+}
+
+.med-field:focus-within {
+  border-color: var(--text);
+}
+
+.med-field label {
+  position: absolute;
+  left: 16px;
+  top: 9px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--caption);
+  pointer-events: none;
+  transform-origin: left top;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.med-field input,
+.med-ghost {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 26px 16px 8px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.med-field input {
+  border: none;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--text);
+  outline: none;
+}
+
+.med-field input::placeholder {
+  color: var(--caption);
+  font-weight: 500;
+}
+
+/* Плавающая подпись «Название»: в пустом поле без фокуса — как плейсхолдер */
+.med-field.is-floating:not(.has-value):not(:focus-within) label {
+  transform: translateY(10px) scale(1.3);
+}
+
+/* Призрачный хвост: слой под прозрачным полем с тем же шрифтом и отступами */
+.med-ghost {
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.med-ghost-typed {
+  visibility: hidden;
+}
+
+.med-ghost-tail {
+  display: inline-block;
+  color: #8a8a9c;
+  animation: ghost-in 0.2s ease-out;
+}
+
+@keyframes ghost-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}
+
+/* «Вставить» внутри поля справа; поле под ней не перекрывает текст */
+.med-field:has(.med-accept) input {
+  padding-right: 130px;
+}
+
+.med-accept {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  height: 44px;
+  margin-top: -22px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--fertile);
+  color: var(--fertile-text);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: accept-in 0.2s ease-out;
+}
+
+@keyframes accept-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+/* Нативное поле времени в iOS: без системного оформления, значение слева */
+.med-field input[type='time'] {
+  -webkit-appearance: none;
+  appearance: none;
   min-width: 0;
 }
 
-.med-form input,
+.med-field input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+.med-form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.med-btn {
+  min-height: 48px;
+  border-radius: var(--r-pill);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.med-btn.is-cancel {
+  background: var(--border);
+  color: var(--text);
+}
+
+.med-btn.is-add {
+  background: var(--lime);
+  color: var(--on-lime);
+}
+
 .diary-note {
   width: 100%;
   min-height: 44px;
@@ -285,35 +416,6 @@
   font: inherit;
   font-size: 16px; /* меньше 16px — iOS приближает страницу при фокусе */
   color: var(--text);
-}
-
-.med-form-row {
-  display: grid;
-  /* minmax(0, …): иначе колонка не уже содержимого и поле времени на iOS вылезает за край */
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-/* Нативное поле времени в iOS: своя ширина, высота и значение по центру */
-.med-form input[type='time'] {
-  -webkit-appearance: none;
-  appearance: none;
-  min-width: 0;
-  height: 44px;
-  line-height: 22px;
-}
-
-.med-form input[type='time']::-webkit-date-and-time-value {
-  text-align: left;
-}
-
-.med-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.diary-note {
   resize: vertical;
   line-height: 1.4;
 }

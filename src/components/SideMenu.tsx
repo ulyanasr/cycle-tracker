@@ -60,7 +60,7 @@ export function SideMenu({ open, onClose, onHistory, onForecasts }: Props) {
             <span className="menu-text">
               Экспорт в Файлы
               <small>
-                Последний бэкап: {lastExport ? format(new Date(lastExport), 'd MMMM', { locale: ru }) : 'ещё не было'}
+                {lastExport ? `Последний бэкап: ${format(new Date(lastExport), 'd MMMM', { locale: ru })}` : 'Бэкапа ещё не было'}
               </small>
             </span>
           </button>
