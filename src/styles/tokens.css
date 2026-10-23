@@ -39,6 +39,11 @@
   --gap-card: 12px;
   --gap-section: 24px;
 
+  /* Выезжающие панели как в iOS: быстрый старт, долгое мягкое торможение */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --sheet-in: 0.5s;
+  --sheet-out: 0.35s;
+
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
 }

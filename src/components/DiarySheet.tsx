@@ -23,6 +23,12 @@ type Props = { date: DateStr | null; onClose: () => void };
 
 export function DiarySheet({ date, onClose }: Props) {
   const open = date !== null;
+  // Пока панель уезжает вниз, показываем последний открытый день, а не пустоту.
+  // n — номер открытия: каждое открытие собирает форму заново, без отменённых правок
+  const [shown, setShown] = useState({ date, open, n: 0 });
+  if (open !== shown.open || (open && date !== shown.date)) {
+    setShown({ date: open ? date : shown.date, open, n: open && !shown.open ? shown.n + 1 : shown.n });
+  }
 
   // Пока панель открыта, страница под ней не прокручивается
   useEffect(() => {
@@ -39,8 +45,7 @@ export function DiarySheet({ date, onClose }: Props) {
       <div className="backdrop" onClick={onClose} />
       <section className="sheet diary" role="dialog" aria-modal="true" aria-label="Дневник дня">
         <div className="sheet-handle" />
-        {/* key: при смене дня форма собирается заново из сохранённых данных */}
-        {date && <DiaryLoader key={date} date={date} onClose={onClose} />}
+        {shown.date && <DiaryLoader key={`${shown.date}-${shown.n}`} date={shown.date} onClose={onClose} />}
       </section>
     </div>
   );

@@ -15,11 +15,12 @@
   inset: 0;
   background: rgba(17, 17, 20, 0.4);
   opacity: 0;
-  transition: opacity 0.25s;
+  transition: opacity var(--sheet-out) var(--ease-sheet);
 }
 
 .is-open .backdrop {
   opacity: 1;
+  transition-duration: var(--sheet-in);
 }
 
 .overlay-head {
@@ -48,12 +49,14 @@
   flex-direction: column;
   gap: var(--gap-section);
   transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform var(--sheet-out) var(--ease-sheet);
+  will-change: transform;
   overflow-y: auto;
 }
 
 .is-open .drawer {
   transform: none;
+  transition-duration: var(--sheet-in);
 }
 
 .menu-list {
@@ -76,12 +79,14 @@
   flex-direction: column;
   gap: 20px;
   transform: translateY(100%);
-  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform var(--sheet-out) var(--ease-sheet);
+  will-change: transform;
   overflow-y: auto;
 }
 
 .is-open .sheet {
   transform: none;
+  transition-duration: var(--sheet-in);
 }
 
 .sheet-handle {
@@ -90,4 +95,19 @@
   border-radius: var(--r-pill);
   background: var(--border);
   margin: 0 auto 4px;
+}
+
+/* «Уменьшение движения» в настройках iPhone: без выезда, только мягкое появление */
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .sheet {
+    transform: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .is-open .drawer,
+  .is-open .sheet {
+    opacity: 1;
+  }
 }
