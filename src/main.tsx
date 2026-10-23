@@ -9,8 +9,7 @@ import './styles/global.css';
 import { App } from './App';
 import { requestPersistence } from './db/db';
 
-// Просим iOS/браузер не стирать данные при нехватке места
-void requestPersistence();
+requestPersistence();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

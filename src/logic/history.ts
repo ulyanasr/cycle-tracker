@@ -1,4 +1,3 @@
-// «История циклов» (5.6)
 import { countedPeriods, effectiveEnd, isAtypical, isStrayMark } from './cycle';
 import { addDays, diffDays, yearOf, type DateStr } from './dates';
 import type { Period } from './types';

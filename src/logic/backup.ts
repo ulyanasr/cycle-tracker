@@ -1,4 +1,5 @@
-// Бэкап (раздел 3). Импорт проверяет файл целиком: при любой ошибке ничего не заменяется
+// Бэкап. Импорт проверяет файл целиком: при любой ошибке ничего не заменяется
+import { compact } from './compact';
 import { byStart } from './cycle';
 import { toStr, yearOf, type DateStr } from './dates';
 import { monthName, monthOf, shiftMonth } from './months';
@@ -46,12 +47,6 @@ export function isValidDate(v: unknown): v is DateStr {
   const [y, m, d] = v.split('-').map(Number);
   return toStr(new Date(y, m - 1, d)) === v;
 }
-
-/** Убирает пустые поля: undefined, пустые строки и массивы */
-const compact = <T extends object>(o: T): T =>
-  Object.fromEntries(
-    Object.entries(o).filter(([, v]) => v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0)),
-  ) as T;
 
 function parsePeriod(v: unknown, i: number): Period {
   const at = `месячные №${i + 1}`;

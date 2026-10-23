@@ -1,4 +1,3 @@
-// Обводочные иконки: stroke 2, скруглённые концы, без эмодзи (раздел 8)
 import type { SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
@@ -56,6 +55,12 @@ export const CloseIcon = (p: IconProps) => (
 export const BackIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M15 5l-7 7 7 7" />
+  </Svg>
+);
+
+export const ForwardIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M9 5l7 7-7 7" />
   </Svg>
 );
 

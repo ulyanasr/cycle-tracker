@@ -1,4 +1,4 @@
-import { cycleDay, forecast, isAfterPeriod, phaseOn, status, windowStats, type Phase, type Status } from './cycle';
+import { cycleDay, forecast, isAfterPeriod, phaseOn, status, windowStats, type Forecast, type Phase, type Status } from './cycle';
 import type { DateStr } from './dates';
 import { AFTER_PERIOD_TEXT, BODY_TEXT, PHASE_TITLE, SPORT_TEXT } from './phaseTexts';
 import { daysLabel, plural } from './plural';
@@ -12,6 +12,7 @@ export interface HomeSummary {
   /** Левая часть индиго-карточки */
   card: { label: string; value: string };
   phase: Phase | null;
+  forecast: Forecast | null;
   cycleDay: number | null;
   status: Status;
   avgCycle: number;
@@ -50,6 +51,7 @@ export function homeSummary(periods: Period[], today: DateStr): HomeSummary {
     title: st.kind === 'delay' ? `Задержка ${st.days} ${plural(st.days, 'день', 'дня', 'дней')}` : phase && PHASE_TITLE[phase],
     card: cardText(st),
     phase,
+    forecast: f,
     cycleDay: cycleDay(periods, today),
     status: st,
     avgCycle: stats.avgCycle,

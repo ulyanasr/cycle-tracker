@@ -1,24 +1,24 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { toggleDay } from '../logic/periods';
+import type { Period } from '../logic/types';
 import { CycleDB } from './db';
 import {
   getAllDayLogs,
   getDayLog,
   getPeriods,
   getSettings,
-  isEmptyDayLog,
   normalizeDayLog,
   addKnownMedName,
   replaceAll,
   saveDayLog,
-  savePeriods,
   updatePeriods,
   updateSettings,
 } from './repo';
 
 let db: CycleDB;
 let n = 0;
+const setPeriods = (ps: Period[]) => updatePeriods(db, () => ps);
 beforeEach(() => {
   db = new CycleDB(`test-${++n}`); // отдельная база на каждый тест
 });
@@ -31,18 +31,18 @@ describe('месячные', () => {
     expect(await getPeriods(db)).toEqual([]);
   });
   it('возвращаются отсортированными по началу', async () => {
-    await savePeriods(db, [
+    await setPeriods([
       { id: 'b', start: '2026-10-01', end: null },
       { id: 'a', start: '2026-09-03', end: '2026-09-07' },
     ]);
     expect((await getPeriods(db)).map((p) => p.id)).toEqual(['a', 'b']);
   });
   it('сохранение заменяет весь список (после склейки старых записей не остаётся)', async () => {
-    await savePeriods(db, [
+    await setPeriods([
       { id: 'a', start: '2026-10-01', end: '2026-10-03' },
       { id: 'b', start: '2026-10-05', end: '2026-10-07' },
     ]);
-    await savePeriods(db, [{ id: 'a', start: '2026-10-01', end: '2026-10-07' }]);
+    await setPeriods([{ id: 'a', start: '2026-10-01', end: '2026-10-07' }]);
     expect(await getPeriods(db)).toEqual([{ id: 'a', start: '2026-10-01', end: '2026-10-07' }]);
   });
   it('два быстрых тапа подряд не затирают друг друга', async () => {
@@ -57,7 +57,7 @@ describe('месячные', () => {
     expect((await getPeriods(db)).map((p) => [p.start, p.end])).toEqual([['2026-10-01', '2026-10-02']]);
   });
   it('end = null сохраняется как null', async () => {
-    await savePeriods(db, [{ id: 'a', start: '2026-10-13', end: null }]);
+    await setPeriods([{ id: 'a', start: '2026-10-13', end: null }]);
     expect((await getPeriods(db))[0].end).toBeNull();
   });
 });
@@ -81,7 +81,6 @@ describe('дневник дня', () => {
       .toEqual({ date: 'd', meds: [{ name: 'Ибупрофен', time: '09:30' }] });
   });
   it('пустой дневник не создаётся, а существующий — удаляется', async () => {
-    expect(isEmptyDayLog({ date: 'd', note: '' })).toBe(true);
     await saveDayLog(db, { date: '2026-10-15', note: '' });
     expect(await getDayLog(db, '2026-10-15')).toBeUndefined();
 
@@ -130,7 +129,7 @@ describe('настройки', () => {
 
 describe('восстановление из бэкапа', () => {
   it('заменяет все данные, старые записи не остаются', async () => {
-    await savePeriods(db, [{ id: 'old', start: '2026-01-01', end: '2026-01-05' }]);
+    await setPeriods([{ id: 'old', start: '2026-01-01', end: '2026-01-05' }]);
     await saveDayLog(db, { date: '2026-01-02', pain: 2 });
     await replaceAll(db, {
       periods: [{ id: 'new', start: '2026-09-01', end: null }],

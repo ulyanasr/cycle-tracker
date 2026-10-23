@@ -1,4 +1,3 @@
-// Блоки дневника: переключатель, шкала 1–5, чипы, лекарства
 import { useId, useRef, useState } from 'react';
 import { medDetails, suggestMedName } from '../../logic/meds';
 import { SCALE_LABELS, SCALE_TITLE, SCORE_COLOR, SCORES, type ScaleKind } from '../../logic/scales';
@@ -47,17 +46,16 @@ export function ScaleField({ kind, value, onChange }: { kind: ScaleKind; value?:
   );
 }
 
-/** Чипы: множественный или одиночный выбор */
-export function Chips({
+export function Chips<T extends string>({
   options,
   isOn,
   onToggle,
   labelOf = (o) => o,
 }: {
-  options: string[];
-  isOn: (o: string) => boolean;
-  onToggle: (o: string) => void;
-  labelOf?: (o: string) => string;
+  options: readonly T[];
+  isOn: (o: T) => boolean;
+  onToggle: (o: T) => void;
+  labelOf?: (o: T) => string;
 }) {
   return (
     <div className="chips">
@@ -70,7 +68,6 @@ export function Chips({
   );
 }
 
-/** Список лекарств дня и форма «+ Лекарство» (5.3) */
 export function MedsField({
   meds,
   known,

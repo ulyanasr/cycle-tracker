@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import type { ReactNode } from 'react';
 import type { DayKind } from '../logic/cycle';
 import { toDate, type DateStr } from '../logic/dates';
 import { monthCells, type YearMonth } from '../logic/months';
@@ -29,12 +29,11 @@ type Props = {
   pressable?: boolean;
 };
 
-// Сетка месяца: круги 40px. Будущие дни не нажимаются (раздел 4)
 export function MonthCalendar({ month, kindOf, today, onTap, header, editing = false, pressable = true }: Props) {
   return (
     <section className={`month-cal ${editing ? 'is-editing' : ''}`}>
       {header}
-      <div className="cal-grid" role="grid">
+      <div className="cal-grid">
         {WEEKDAYS.map((w) => (
           <span key={w} className="cal-weekday" aria-hidden="true">{w}</span>
         ))}

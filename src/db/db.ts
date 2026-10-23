@@ -2,8 +2,8 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { DayLog, Period, Settings } from '../logic/types';
 
-/** Настройки храним одной записью с ключом 'app' */
-export type SettingsRow = Settings & { key: 'app' };
+/** Настройки — одна запись с ключом 'app' */
+type SettingsRow = Settings & { key: 'app' };
 
 export class CycleDB extends Dexie {
   periods!: EntityTable<Period, 'id'>;
@@ -28,10 +28,6 @@ export const db = new CycleDB();
  * Просим браузер не удалять данные при нехватке места.
  * На iOS даёт эффект для приложения, установленного на экран «Домой».
  */
-export async function requestPersistence(): Promise<boolean> {
-  try {
-    return (await navigator.storage?.persist?.()) ?? false;
-  } catch {
-    return false;
-  }
+export function requestPersistence() {
+  navigator.storage?.persist?.().catch(() => {});
 }

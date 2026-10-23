@@ -19,15 +19,6 @@ export function SideMenu({ open, onClose, onHistory, onForecasts }: Props) {
   const stats = data ? windowStats(data.periods) : null;
   const lastExport = data?.settings.lastExportAt;
 
-  const onExport = async () => {
-    if (!data) return;
-    try {
-      await exportBackup(data);
-    } catch {
-      alert('Не получилось сохранить файл. Попробуй ещё раз.');
-    }
-  };
-
   return (
     <div className={`overlay ${open ? 'is-open' : ''}`} aria-hidden={!open} inert={!open}>
       <div className="backdrop" onClick={onClose} />
@@ -55,7 +46,7 @@ export function SideMenu({ open, onClose, onHistory, onForecasts }: Props) {
             <span className="menu-icon"><ChartIcon /></span>
             <span className="menu-text">История циклов</span>
           </button>
-          <button className="menu-item is-lime" onClick={onExport} disabled={!data}>
+          <button className="menu-item is-lime" onClick={() => data && exportBackup(data)} disabled={!data}>
             <span className="menu-icon"><DownloadIcon /></span>
             <span className="menu-text">
               Экспорт в Файлы

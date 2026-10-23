@@ -4,6 +4,7 @@ import { useDayLogs, usePeriods } from '../db/hooks';
 import { useToday } from '../hooks/useToday';
 import type { DateStr } from '../logic/dates';
 import { notesFeed, type NoteRow, type NotesFilter } from '../logic/notes';
+import { SCORES } from '../logic/scales';
 import type { Score } from '../logic/types';
 import './Notes.css';
 
@@ -24,11 +25,10 @@ const EMPTY_TEXT: Record<NotesFilter, string> = {
   meds: 'Записей с лекарствами нет.',
 };
 
-/** 5 маленьких полосок, заполнено по баллу */
 function ScoreBars({ score }: { score: Score }) {
   return (
     <span className="score-bars" aria-hidden="true">
-      {[1, 2, 3, 4, 5].map((i) => (
+      {SCORES.map((i) => (
         <i key={i} className={i <= score ? 'is-on' : ''} />
       ))}
     </span>
@@ -39,7 +39,7 @@ function Row({ row }: { row: NoteRow }) {
   return (
     <div className="note-row">
       <dt>{row.label}</dt>
-      <dd className={row.label === 'Заметка' ? 'is-note' : ''}>
+      <dd className={row.kind === 'note' ? 'is-note' : ''}>
         {row.kind === 'score' ? (
           <>
             <ScoreBars score={row.score} />
@@ -98,7 +98,7 @@ export function Notes({ onMenu, onOpenDay }: Props) {
             <button key={card.date} className="note-card" onClick={() => onOpenDay(card.date)}>
               <div className="note-head">
                 <b>
-                  {card.isPeriod && <i className="note-dot" aria-label="месячные" />}
+                  {card.isPeriod && <i className="note-dot" role="img" aria-label="месячные" />}
                   {card.title}
                 </b>
                 {card.cycleDay && <span>{card.cycleDay}-й день цикла</span>}

@@ -1,5 +1,4 @@
-// Хуки для экранов: данные из базы, которые сами обновляются после
-// любой записи — поэтому после правки всё пересчитывается сразу.
+// Живые данные из базы: экраны перерисовываются сразу после любой записи
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from './db';
 import { getAllDayLogs, getDayLog, getPeriods, getSettings } from './repo';

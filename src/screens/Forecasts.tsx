@@ -1,4 +1,3 @@
-// «Как считаются прогнозы» (5.7)
 import { BackIcon } from '../components/Icons';
 import './Forecasts.css';
 

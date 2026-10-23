@@ -1,6 +1,6 @@
-// Чтение и запись данных. Экраны работают только через эти функции,
-// напрямую в таблицы не ходят.
+// Чтение и запись данных. Экраны ходят в базу только через эти функции
 import type { CycleDB } from './db';
+import { compact } from '../logic/compact';
 import { pruneMedNames, rememberMedName } from '../logic/meds';
 import type { DayLog, Period, Settings } from '../logic/types';
 
@@ -10,25 +10,11 @@ export const DEFAULT_SETTINGS: Settings = {
   knownMedNames: [],
 };
 
-/* ---------------- Месячные ---------------- */
-
 export const getPeriods = (db: CycleDB): Promise<Period[]> => db.periods.orderBy('start').toArray();
 
 /**
- * Логика тапов (logic/periods.ts) возвращает новый список целиком:
- * месячные могут склеиться или разделиться. Поэтому заменяем весь
- * список одной транзакцией — либо сохранится всё, либо ничего.
- */
-export async function savePeriods(db: CycleDB, periods: Period[]): Promise<void> {
-  await db.transaction('rw', db.periods, async () => {
-    await db.periods.clear();
-    await db.periods.bulkPut(periods);
-  });
-}
-
-/**
- * Правка месячных: читает актуальный список и записывает результат
- * в одной транзакции. Так два быстрых тапа подряд не затрут друг друга.
+ * Правка месячных целиком (они могут склеиться или разделиться): чтение и
+ * запись в одной транзакции, поэтому два быстрых тапа подряд не затрут друг друга.
  */
 export async function updatePeriods(
   db: CycleDB,
@@ -41,37 +27,22 @@ export async function updatePeriods(
   });
 }
 
-/* ---------------- Дневник дня ---------------- */
-
 export const getDayLog = (db: CycleDB, date: string): Promise<DayLog | undefined> =>
   db.dayLogs.get(date);
 
 export const getAllDayLogs = (db: CycleDB): Promise<DayLog[]> => db.dayLogs.toArray();
 
-/** Убирает пустые поля: пустая заметка, пустой список настроений и т.п. */
-export function normalizeDayLog(log: DayLog): DayLog {
-  const out: DayLog = { date: log.date };
-  if (log.flow) out.flow = log.flow;
-  if (log.pain) out.pain = log.pain;
-  if (log.pms) out.pms = log.pms;
-  if (log.wellbeing) out.wellbeing = log.wellbeing;
-  if (log.moods?.length) out.moods = [...log.moods];
+export const normalizeDayLog = (log: DayLog): DayLog =>
+  compact({
+    ...log,
+    meds: log.meds
+      ?.map((m) => compact({ name: m.name.trim(), dose: m.dose?.trim(), time: m.time }))
+      .filter((m) => m.name),
+    note: log.note?.trim(),
+  });
 
-  const meds = (log.meds ?? [])
-    .map((m) => ({
-      name: m.name.trim(),
-      ...(m.dose?.trim() ? { dose: m.dose.trim() } : {}),
-      ...(m.time ? { time: m.time } : {}),
-    }))
-    .filter((m) => m.name);
-  if (meds.length) out.meds = meds;
-
-  const note = log.note?.trim();
-  if (note) out.note = note;
-  return out;
-}
-
-export const isEmptyDayLog = (log: DayLog) => Object.keys(normalizeDayLog(log)).length === 1;
+/** Есть ли в записи что-то кроме даты */
+const hasContent = (log: DayLog) => Object.keys(log).length > 1;
 
 /**
  * Пустой дневник удаляется, чтобы в «Заметках» не было пустых карточек.
@@ -80,14 +51,12 @@ export const isEmptyDayLog = (log: DayLog) => Object.keys(normalizeDayLog(log)).
 export async function saveDayLog(db: CycleDB, log: DayLog): Promise<void> {
   const clean = normalizeDayLog(log);
   await db.transaction('rw', db.dayLogs, db.settings, async () => {
-    if (isEmptyDayLog(clean)) await db.dayLogs.delete(clean.date);
-    else await db.dayLogs.put(clean);
-    const { knownMedNames } = await getSettings(db);
-    await updateSettings(db, { knownMedNames: pruneMedNames(knownMedNames, await db.dayLogs.toArray()) });
+    if (hasContent(clean)) await db.dayLogs.put(clean);
+    else await db.dayLogs.delete(clean.date);
+    const logs = await db.dayLogs.toArray();
+    await updateSettings(db, (s) => ({ knownMedNames: pruneMedNames(s.knownMedNames, logs) }));
   });
 }
-
-/* ---------------- Настройки ---------------- */
 
 export async function getSettings(db: CycleDB): Promise<Settings> {
   const row = await db.settings.get('app');
@@ -96,25 +65,22 @@ export async function getSettings(db: CycleDB): Promise<Settings> {
   return { ...DEFAULT_SETTINGS, ...rest };
 }
 
-export async function updateSettings(db: CycleDB, patch: Partial<Settings>): Promise<Settings> {
-  return db.transaction('rw', db.settings, async () => {
-    const next = { ...(await getSettings(db)), ...patch };
-    await db.settings.put({ key: 'app', ...next });
-    return next;
+/** patch — сами поля или функция от текущих настроек */
+export async function updateSettings(
+  db: CycleDB,
+  patch: Partial<Settings> | ((s: Settings) => Partial<Settings>),
+): Promise<void> {
+  await db.transaction('rw', db.settings, async () => {
+    const cur = await getSettings(db);
+    await db.settings.put({ key: 'app', ...cur, ...(typeof patch === 'function' ? patch(cur) : patch) });
   });
 }
 
 /** «Добавить» в форме лекарства: название сразу попадает в подсказки */
-export async function addKnownMedName(db: CycleDB, name: string): Promise<void> {
-  await db.transaction('rw', db.settings, async () => {
-    const { knownMedNames } = await getSettings(db);
-    await updateSettings(db, { knownMedNames: rememberMedName(name.trim(), knownMedNames) });
-  });
-}
+export const addKnownMedName = (db: CycleDB, name: string) =>
+  updateSettings(db, (s) => ({ knownMedNames: rememberMedName(name.trim(), s.knownMedNames) }));
 
-/* ---------------- Восстановление из бэкапа ---------------- */
-
-/** Полная замена всех данных одной транзакцией: либо всё, либо ничего */
+/** Восстановление из бэкапа: полная замена одной транзакцией — либо всё, либо ничего */
 export async function replaceAll(
   db: CycleDB,
   data: { periods: Period[]; dayLogs: DayLog[]; settings: Settings },

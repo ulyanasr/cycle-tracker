@@ -1,5 +1,4 @@
-// Дневник дня (5.3): выезжающая снизу панель. Всё применяется по «Сохранить»,
-// ✕ и тап по затемнению закрывают без сохранения.
+// Всё применяется только по «Сохранить»; ✕, свайп вниз и тап по фону закрывают без сохранения
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
@@ -13,7 +12,7 @@ import { capitalize } from '../logic/months';
 import { toggleDay } from '../logic/periods';
 import { PHASE_TITLE } from '../logic/phaseTexts';
 import { FLOW_LABEL, FLOWS, MOODS } from '../logic/scales';
-import type { DayLog, Flow, Period } from '../logic/types';
+import type { DayLog, Period } from '../logic/types';
 import { Chips, MedsField, ScaleField, Toggle } from './diary/fields';
 import { CloseIcon } from './Icons';
 import './Overlays.css';
@@ -41,27 +40,25 @@ export function DiarySheet({ date, onClose }: Props) {
   }, [open]);
 
   // Свайп вниз за «ручку» или заголовок закрывает без сохранения
-  const sheet = useRef<HTMLElement>(null);
   const drag = useRef<{ y: number; t: number } | null>(null);
-  const onPointerDown = (e: PointerEvent) => {
+  const onPointerDown = (e: PointerEvent<HTMLElement>) => {
     const target = e.target as HTMLElement;
     if (!target.closest('.sheet-handle, .diary-head') || target.closest('button')) return;
     drag.current = { y: e.clientY, t: e.timeStamp };
     e.currentTarget.setPointerCapture(e.pointerId);
-    sheet.current!.style.transition = 'none';
+    e.currentTarget.style.transition = 'none';
   };
-  const onPointerMove = (e: PointerEvent) => {
-    if (!drag.current) return;
-    sheet.current!.style.transform = `translateY(${Math.max(0, e.clientY - drag.current.y)}px)`;
+  const onPointerMove = (e: PointerEvent<HTMLElement>) => {
+    if (drag.current) e.currentTarget.style.transform = `translateY(${Math.max(0, e.clientY - drag.current.y)}px)`;
   };
-  const onPointerUp = (e: PointerEvent) => {
+  const onPointerUp = (e: PointerEvent<HTMLElement>) => {
     if (!drag.current) return;
     const dy = e.clientY - drag.current.y;
     const speed = dy / Math.max(1, e.timeStamp - drag.current.t);
     drag.current = null;
-    // Сбрасываем инлайн-стили: панель доедет вниз или вернётся с обычной анимацией
-    sheet.current!.style.transition = '';
-    sheet.current!.style.transform = '';
+    // Без инлайн-стилей панель доедет вниз или вернётся обычной CSS-анимацией
+    e.currentTarget.style.transition = '';
+    e.currentTarget.style.transform = '';
     if (dy > 120 || speed > 0.6) onClose();
   };
 
@@ -69,7 +66,6 @@ export function DiarySheet({ date, onClose }: Props) {
     <div className={`overlay ${open ? 'is-open' : ''}`} aria-hidden={!open} inert={!open}>
       <div className="backdrop" onClick={onClose} />
       <section
-        ref={sheet}
         className="sheet diary"
         role="dialog"
         aria-modal="true"
@@ -96,6 +92,12 @@ function DiaryLoader({ date, onClose }: { date: DateStr; onClose: () => void }) 
 
 type Extra = 'pms' | 'wellbeing' | 'note';
 
+const EXTRAS: { key: Extra; label: string }[] = [
+  { key: 'pms', label: '+ ПМС' },
+  { key: 'wellbeing', label: '+ Самочувствие' },
+  { key: 'note', label: '+ Заметка' },
+];
+
 function DiaryForm({
   date,
   saved,
@@ -115,11 +117,10 @@ function DiaryForm({
   const [log, setLog] = useState<DayLog>(saved ?? { date });
   // Блоки «+ Добавить»: открыты, если уже заполнены
   const [extras, setExtras] = useState<Set<Extra>>(
-    () => new Set((['pms', 'wellbeing', 'note'] as Extra[]).filter((k) => saved?.[k] !== undefined)),
+    () => new Set(EXTRAS.map((x) => x.key).filter((k) => saved?.[k] !== undefined)),
   );
 
   const patch = (p: Partial<DayLog>) => setLog((l) => ({ ...l, ...p }));
-  const openExtra = (k: Extra) => setExtras((s) => new Set(s).add(k));
 
   const day = cycleDay(periods, date);
   const phase = phaseOn(periods, date, today);
@@ -150,9 +151,9 @@ function DiaryForm({
           {isPeriod && (
             <Chips
               options={FLOWS}
-              labelOf={(f) => FLOW_LABEL[f as Flow]}
+              labelOf={(f) => FLOW_LABEL[f]}
               isOn={(f) => log.flow === f}
-              onToggle={(f) => setLog((l) => ({ ...l, flow: l.flow === f ? undefined : (f as Flow) }))}
+              onToggle={(f) => setLog((l) => ({ ...l, flow: l.flow === f ? undefined : f }))}
             />
           )}
         </div>
@@ -166,10 +167,7 @@ function DiaryForm({
             isOn={(m) => !!log.moods?.includes(m)}
             onToggle={(m) =>
               // От актуального состояния: два быстрых тапа подряд не теряют выбор
-              setLog((l) => {
-                const cur = l.moods ?? [];
-                return { ...l, moods: cur.includes(m) ? cur.filter((x) => x !== m) : [...cur, m] };
-              })
+              setLog((l) => ({ ...l, moods: l.moods?.includes(m) ? l.moods.filter((x) => x !== m) : [...(l.moods ?? []), m] }))
             }
           />
         </section>
@@ -198,15 +196,15 @@ function DiaryForm({
           </section>
         )}
 
-        {extras.size < 3 && (
+        {extras.size < EXTRAS.length && (
           <section className="diary-block">
             <h3 className="diary-caption-title">Добавить</h3>
             <div className="chips">
-              {!extras.has('pms') && <button className="chip is-gray" onClick={() => openExtra('pms')}>+ ПМС</button>}
-              {!extras.has('wellbeing') && (
-                <button className="chip is-gray" onClick={() => openExtra('wellbeing')}>+ Самочувствие</button>
-              )}
-              {!extras.has('note') && <button className="chip is-gray" onClick={() => openExtra('note')}>+ Заметка</button>}
+              {EXTRAS.filter((x) => !extras.has(x.key)).map((x) => (
+                <button key={x.key} className="chip is-gray" onClick={() => setExtras((s) => new Set(s).add(x.key))}>
+                  {x.label}
+                </button>
+              ))}
             </div>
           </section>
         )}

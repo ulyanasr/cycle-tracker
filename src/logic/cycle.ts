@@ -1,4 +1,4 @@
-// Расчёты цикла (раздел 4). periods всегда отсортированы по start — так их отдаёт база.
+// Расчёты цикла. periods всегда отсортированы по start — так их отдаёт база.
 import { addDays, diffDays, inRange, yearOf, type DateStr } from './dates';
 import type { Period } from './types';
 

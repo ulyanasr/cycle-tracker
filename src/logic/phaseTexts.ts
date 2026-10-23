@@ -1,4 +1,4 @@
-// Тексты карточек «Тело сейчас» и «Спорт сегодня» (раздел 6)
+// Тексты карточек «Тело сейчас» и «Спорт сегодня»
 import type { Phase } from './cycle';
 
 export const PHASE_TITLE: Record<Phase, string> = {

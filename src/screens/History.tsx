@@ -1,4 +1,3 @@
-// «История циклов» (5.6): текущий год или архив прошлых лет
 import { useMemo, useState } from 'react';
 import { BackIcon } from '../components/Icons';
 import { usePeriods } from '../db/hooks';
@@ -6,14 +5,11 @@ import { useToday } from '../hooks/useToday';
 import { yearStats } from '../logic/cycle';
 import { yearOf } from '../logic/dates';
 import { archiveYears, barParts, yearCycles, type HistoryCycle } from '../logic/history';
-import { shortDate } from '../logic/notes';
+import { dayMonth } from '../logic/notes';
 import { daysLabel, plural } from '../logic/plural';
 import './History.css';
 
 type View = { kind: 'year'; year: number } | { kind: 'archive' };
-
-/** «31 авг» — без дня недели */
-const dayMonth = (d: string) => shortDate(d).split(',')[0];
 
 function CycleCard({ c }: { c: HistoryCycle }) {
   const bar = barParts(c);

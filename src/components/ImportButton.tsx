@@ -8,7 +8,6 @@ type Props = {
   onDone?: () => void;
 };
 
-/** Кнопка, открывающая выбор файла бэкапа (<input type="file">) */
 export function ImportButton({ className, children, onDone }: Props) {
   const input = useRef<HTMLInputElement>(null);
   return (

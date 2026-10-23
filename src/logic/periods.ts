@@ -1,4 +1,4 @@
-// toggleDay и кнопки «Начались» / «Закончились» (раздел 4). Возвращают новый массив
+// toggleDay и кнопки «Начались» / «Закончились». Возвращают новый массив
 import { byStart, effectiveEnd } from './cycle';
 import { addDays, inRange, type DateStr } from './dates';
 import type { Period } from './types';

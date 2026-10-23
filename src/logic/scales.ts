@@ -1,4 +1,4 @@
-// Шкалы и списки (раздел 7). 5 — нужны сильные лекарства или врач
+// Шкалы и списки. 5 — нужны сильные лекарства или врач
 import type { Flow, Score } from './types';
 
 export type ScaleKind = 'pain' | 'pms' | 'wellbeing';

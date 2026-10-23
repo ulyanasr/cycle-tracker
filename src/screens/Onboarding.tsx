@@ -1,4 +1,3 @@
-// Первый запуск: приветствие и два шага с календарями прошлых месяцев (5.1)
 import { useMemo, useState } from 'react';
 import { CycleRing } from '../components/CycleRing';
 import { BackIcon, CalendarIcon, LockIcon, PencilIcon } from '../components/Icons';

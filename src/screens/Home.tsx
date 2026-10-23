@@ -1,14 +1,14 @@
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useMemo, useState } from 'react';
-import { BackIcon, MenuIcon } from '../components/Icons';
+import { BackIcon, ForwardIcon, MenuIcon } from '../components/Icons';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { db } from '../db/db';
 import { exportBackup, useBackupData } from '../db/backupIO';
 import { updatePeriods } from '../db/repo';
 import { useToday } from '../hooks/useToday';
 import { backupBanner } from '../logic/backup';
-import { dayKind, forecast } from '../logic/cycle';
+import { dayKind, type DayKind } from '../logic/cycle';
 import { toDate, type DateStr } from '../logic/dates';
 import { homeSummary } from '../logic/home';
 import { capitalize, monthCells, monthName, monthOf, shiftMonth } from '../logic/months';
@@ -22,6 +22,8 @@ type Props = {
   onOpenDay: (date: DateStr) => void;
 };
 
+const NO_PERIODS: never[] = [];
+
 // «Ср, 14 октября»: date-fns даёт «ср», первую букву делаем заглавной
 const dateLabel = (date: DateStr) => capitalize(format(toDate(date), 'EEEEEE, d MMMM', { locale: ru }));
 
@@ -29,7 +31,7 @@ export function Home({ onMenu, onOpenDay }: Props) {
   const today = useToday();
   // Все данные сразу: экспорт из баннера должен стартовать без чтения базы
   const data = useBackupData();
-  const periods = data?.periods ?? [];
+  const periods = data?.periods ?? NO_PERIODS;
   const banner = data
     ? backupBanner(today, data.settings.lastExportAt, data.periods.length + data.dayLogs.length > 0)
     : null;
@@ -37,15 +39,19 @@ export function Home({ onMenu, onOpenDay }: Props) {
   const [editing, setEditing] = useState(false);
 
   const summary = useMemo(() => homeSummary(periods, today), [periods, today]);
-  const f = useMemo(() => forecast(periods), [periods]);
   const { label, value } = summary.card;
 
-  // В режиме «Изменить» прогноз не рисуется, чтобы его пунктир не путался с пунктиром для отметки
-  const kindOf = (d: DateStr) => {
-    const k = dayKind(periods, d, today, f);
-    return editing && (k === 'forecast' || k === 'possible') ? null : k;
-  };
-  const hasPossible = monthCells(month).some((d) => d !== null && kindOf(d) === 'possible');
+  const kinds = useMemo(() => {
+    const m = new Map<DateStr, DayKind>();
+    for (const d of monthCells(month)) {
+      if (!d) continue;
+      const k = dayKind(periods, d, today, summary.forecast);
+      // В режиме «Изменить» прогноз не рисуется, чтобы его пунктир не путался с пунктиром для отметки
+      m.set(d, editing && (k === 'forecast' || k === 'possible') ? null : k);
+    }
+    return m;
+  }, [month, periods, today, summary.forecast, editing]);
+  const hasPossible = [...kinds.values()].includes('possible');
 
   const onTapDay = (date: DateStr) => {
     if (editing) updatePeriods(db, (ps) => toggleDay(ps, date, today));
@@ -88,14 +94,13 @@ export function Home({ onMenu, onOpenDay }: Props) {
               <span>{plural(summary.avgCycle, 'день', 'дня', 'дней')}</span>
             </div>
           </div>
-          {summary.button === 'start' && (
-            <button className="period-btn" onClick={() => updatePeriods(db, (ps) => startPeriod(ps, today))}>
-              <i aria-hidden="true" /> Начались сегодня
-            </button>
-          )}
-          {summary.button === 'finish' && (
-            <button className="period-btn" onClick={() => updatePeriods(db, (ps) => finishPeriod(ps, today))}>
-              <i className="is-lavender" aria-hidden="true" /> Закончились сегодня
+          {summary.button && (
+            <button
+              className="period-btn"
+              onClick={() => updatePeriods(db, (ps) => (summary.button === 'start' ? startPeriod : finishPeriod)(ps, today))}
+            >
+              <i className={summary.button === 'finish' ? 'is-lavender' : ''} aria-hidden="true" />
+              {summary.button === 'start' ? 'Начались сегодня' : 'Закончились сегодня'}
             </button>
           )}
         </div>
@@ -120,7 +125,7 @@ export function Home({ onMenu, onOpenDay }: Props) {
         {banner && (
           <button
             className="backup-banner"
-            onClick={() => data && exportBackup(data).catch(() => alert('Не получилось сохранить файл. Попробуй ещё раз.'))}
+            onClick={() => data && exportBackup(data)}
           >
             {banner} <span aria-hidden="true">→</span>
           </button>
@@ -130,31 +135,31 @@ export function Home({ onMenu, onOpenDay }: Props) {
           today={today}
           editing={editing}
           pressable={editing}
-          kindOf={kindOf}
+          kindOf={(d) => kinds.get(d) ?? null}
           onTap={onTapDay}
           header={
             <>
-            <div className="cal-head">
-              <h2>{capitalize(monthName(month.month))} {month.year}</h2>
-              {editing ? (
-                <button className="pill-btn is-black" onClick={() => setEditing(false)}>Готово</button>
-              ) : (
-                <div className="cal-head-actions">
-                  <button className="pill-btn" onClick={() => setEditing(true)}>Изменить</button>
-                  <button className="round-btn" aria-label="Предыдущий месяц" onClick={() => setMonth((m) => shiftMonth(m, -1))}>
-                    <BackIcon size={20} />
-                  </button>
-                  <button className="round-btn" aria-label="Следующий месяц" onClick={() => setMonth((m) => shiftMonth(m, 1))}>
-                    <BackIcon size={20} style={{ transform: 'scaleX(-1)' }} />
-                  </button>
-                </div>
+              <div className="cal-head">
+                <h2>{capitalize(monthName(month.month))} {month.year}</h2>
+                {editing ? (
+                  <button className="pill-btn is-black" onClick={() => setEditing(false)}>Готово</button>
+                ) : (
+                  <div className="cal-head-actions">
+                    <button className="pill-btn" onClick={() => setEditing(true)}>Изменить</button>
+                    <button className="round-btn" aria-label="Предыдущий месяц" onClick={() => setMonth((m) => shiftMonth(m, -1))}>
+                      <BackIcon size={20} />
+                    </button>
+                    <button className="round-btn" aria-label="Следующий месяц" onClick={() => setMonth((m) => shiftMonth(m, 1))}>
+                      <ForwardIcon size={20} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              {editing && (
+                <p className="edit-hint" role="status">
+                  Тапай по дням, чтобы отметить или снять месячные. Конец и прогноз пересчитаются сами.
+                </p>
               )}
-            </div>
-            {editing && (
-              <p className="edit-hint" role="status">
-                Тапай по дням, чтобы отметить или снять месячные. Конец и прогноз пересчитаются сами.
-              </p>
-            )}
             </>
           }
         />

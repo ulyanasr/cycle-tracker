@@ -1,4 +1,4 @@
-// Лента «Заметки» (5.4): записи дневника по месяцам, только заполненные строки
+// Лента «Заметки»: записи дневника по месяцам, только заполненные строки
 import { cycleDay, isPeriodDay } from './cycle';
 import { toDate, yearOf, type DateStr } from './dates';
 import { medDetails } from './meds';
@@ -16,7 +16,7 @@ export const SHORT_LABELS: Record<ScaleKind, Record<Score, string>> = {
 };
 
 export type NoteRow =
-  | { label: string; kind: 'text'; text: string }
+  | { label: string; kind: 'text' | 'note'; text: string }
   | { label: string; kind: 'score'; score: Score; text: string };
 
 export interface NoteCard {
@@ -35,10 +35,11 @@ export interface NoteGroup {
 const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 const WEEKDAYS_SHORT = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
 
-export const shortDate = (date: DateStr) => {
-  const { month } = monthOf(date);
-  return `${Number(date.slice(8))} ${MONTHS_SHORT[month]}, ${WEEKDAYS_SHORT[toDate(date).getDay()]}`;
-};
+/** «31 авг» */
+export const dayMonth = (date: DateStr) => `${Number(date.slice(8))} ${MONTHS_SHORT[monthOf(date).month]}`;
+
+/** «14 окт, ср» */
+export const shortDate = (date: DateStr) => `${dayMonth(date)}, ${WEEKDAYS_SHORT[toDate(date).getDay()]}`;
 
 /** «Стресс, устала морально»: с заглавной только первое */
 const joinMoods = (moods: string[]) =>
@@ -56,7 +57,7 @@ export function noteRows(log: DayLog): NoteRow[] {
     const text = log.meds.map((m) => [m.name, medDetails(m)].filter(Boolean).join(' ')).join(', ');
     rows.push({ label: 'Лекарства', kind: 'text', text });
   }
-  if (log.note) rows.push({ label: 'Заметка', kind: 'text', text: log.note });
+  if (log.note) rows.push({ label: 'Заметка', kind: 'note', text: log.note });
   return rows;
 }
 
