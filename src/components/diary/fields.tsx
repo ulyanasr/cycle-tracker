@@ -1,5 +1,5 @@
 // Блоки дневника: переключатель, шкала 1–5, чипы, лекарства
-import { useId } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { medDetails, suggestMeds } from '../../logic/meds';
 import { SCALE_LABELS, SCALE_TITLE, SCORE_COLOR, SCORES, type ScaleKind } from '../../logic/scales';
 import type { Medication, Score } from '../../logic/types';
@@ -96,6 +96,24 @@ export function MedsField({
   onChange: (meds: Medication[]) => void;
 }) {
   const hints = draft ? suggestMeds(known, draft.name) : [];
+  const formRef = useRef<HTMLDivElement>(null);
+
+  // На iPhone клавиатура закрывает низ экрана, и подсказки под полем оказываются
+  // под ней. Когда клавиатура открылась, поднимаем форму к верху дневника.
+  const revealHints = () =>
+    setTimeout(() => {
+      const form = formRef.current;
+      const scroller = form?.closest('.diary-scroll');
+      if (!form || !scroller) return;
+      const top = scroller.scrollTop + form.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 12;
+      scroller.scrollTo({ top });
+    }, 300);
+
+  // При открытии формы — сразу; onFocus — если поле тронули снова после прокрутки
+  const formOpen = draft !== null;
+  useEffect(() => {
+    if (formOpen) revealHints();
+  }, [formOpen]);
   const set = (patch: Partial<NonNullable<MedDraft>>) => draft && onDraft({ ...draft, ...patch });
   const add = () => {
     const med = draftToMed(draft);
@@ -120,10 +138,16 @@ export function MedsField({
       ))}
 
       {draft ? (
-        <div className="med-form">
+        <div className="med-form" ref={formRef}>
           <label>
             <span>Название</span>
-            <input value={draft.name} onChange={(e) => set({ name: e.target.value })} autoFocus autoComplete="off" />
+            <input
+              value={draft.name}
+              onChange={(e) => set({ name: e.target.value })}
+              onFocus={revealHints}
+              autoFocus
+              autoComplete="off"
+            />
           </label>
           {hints.length > 0 && (
             <div className="chips">

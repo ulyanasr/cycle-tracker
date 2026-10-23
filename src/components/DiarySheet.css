@@ -17,6 +17,11 @@
   gap: 26px;
 }
 
+/* Запас снизу, чтобы форму лекарства можно было поднять над клавиатурой */
+.diary-scroll:has(.med-form) {
+  padding-bottom: 45vh;
+}
+
 .diary-footer {
   padding: 12px var(--pad-screen) calc(var(--safe-bottom) + 16px);
   background: var(--bg);
