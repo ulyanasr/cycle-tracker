@@ -284,8 +284,22 @@
 
 .med-form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, …): иначе колонка не уже содержимого и поле времени на iOS вылезает за край */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+/* Нативное поле времени в iOS: своя ширина, высота и значение по центру */
+.med-form input[type='time'] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  height: 44px;
+  line-height: 22px;
+}
+
+.med-form input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
 }
 
 .med-form-actions {
