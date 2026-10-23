@@ -1,6 +1,7 @@
 // Чтение и запись данных. Экраны работают только через эти функции,
 // напрямую в таблицы не ходят.
 import type { CycleDB } from './db';
+import { pruneMedNames, rememberMedName } from '../logic/meds';
 import type { DayLog, Period, Settings } from '../logic/types';
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -73,15 +74,16 @@ export function normalizeDayLog(log: DayLog): DayLog {
 export const isEmptyDayLog = (log: DayLog) => Object.keys(normalizeDayLog(log)).length === 1;
 
 /**
- * Сохраняет дневник дня. Пустой дневник удаляется, чтобы в «Заметках»
- * не появлялись пустые карточки. Названия лекарств запоминаются для подсказок.
+ * Пустой дневник удаляется, чтобы в «Заметках» не было пустых карточек.
+ * После записи из подсказок убираются названия, которых больше нет ни в одной записи.
  */
 export async function saveDayLog(db: CycleDB, log: DayLog): Promise<void> {
   const clean = normalizeDayLog(log);
   await db.transaction('rw', db.dayLogs, db.settings, async () => {
     if (isEmptyDayLog(clean)) await db.dayLogs.delete(clean.date);
     else await db.dayLogs.put(clean);
-    if (clean.meds) await rememberMedNames(db, clean.meds.map((m) => m.name));
+    const { knownMedNames } = await getSettings(db);
+    await updateSettings(db, { knownMedNames: pruneMedNames(knownMedNames, await db.dayLogs.toArray()) });
   });
 }
 
@@ -102,21 +104,12 @@ export async function updateSettings(db: CycleDB, patch: Partial<Settings>): Pro
   });
 }
 
-/**
- * Добавляет названия в подсказки. Без дублей без учёта регистра
- * («ибупрофен» = «Ибупрофен»); последние использованные — в начале.
- */
-export async function rememberMedNames(db: CycleDB, names: string[]): Promise<void> {
-  const { knownMedNames } = await getSettings(db);
-  const fresh = names.map((n) => n.trim()).filter(Boolean);
-  const seen = new Set<string>();
-  const merged = fresh.concat(knownMedNames).filter((n) => {
-    const k = n.toLocaleLowerCase('ru');
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
+/** «Добавить» в форме лекарства: название сразу попадает в подсказки */
+export async function addKnownMedName(db: CycleDB, name: string): Promise<void> {
+  await db.transaction('rw', db.settings, async () => {
+    const { knownMedNames } = await getSettings(db);
+    await updateSettings(db, { knownMedNames: rememberMedName(name.trim(), knownMedNames) });
   });
-  await updateSettings(db, { knownMedNames: merged });
 }
 
 /* ---------------- Восстановление из бэкапа ---------------- */

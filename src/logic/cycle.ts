@@ -163,13 +163,14 @@ export type DayKind = 'period' | 'forecast' | 'possible' | 'ovulation' | 'fertil
 
 /**
  * Приоритет: месячные → вероятные → овуляция → фертильное окно → возможные.
- * Прогноз не рисуется на прошедших днях: день без отметки — это не месячные.
+ * Прогноз не рисуется на прошедших днях (день без отметки — это не месячные) и при задержке.
  * Окно текущего цикла видно и в прошлом.
  */
 export function dayKind(periods: Period[], date: DateStr, today: DateStr, f: Forecast | null): DayKind {
   if (isPeriodDay(periods, date, today)) return 'period';
   if (!f) return null;
-  const future = date >= today;
+  // При задержке прогнозные дни уже прошли — не рисуем ни вероятные, ни возможные
+  const future = date >= today && f.nextStart >= today;
   if (future && (inRange(date, f.nextStart, f.probableTo) || (f.currentEnd && date <= f.currentEnd))) {
     return 'forecast';
   }

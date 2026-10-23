@@ -74,6 +74,14 @@ describe('лента', () => {
     expect(notesFeed(logs, periods, today, 'meds').flatMap((g) => g.cards.map((c) => c.date)))
       .toEqual(['2026-10-14', '2026-09-29']);
   });
+  it('день, где месячные отмечены только в календаре, в ленту не попадает', () => {
+    // 28 сен – 2 окт — месячные, но записи дневника за 1 окт нет
+    const dates = notesFeed(logs, periods, today, 'all').flatMap((g) => g.cards.map((c) => c.date));
+    expect(dates).not.toContain('2026-10-01');
+  });
+  it('пустая запись дневника в ленту не попадает', () => {
+    expect(notesFeed([{ date: '2026-10-01', moods: [] }], periods, today, 'all')).toEqual([]);
+  });
   it('нет записей — пустая лента', () => {
     expect(notesFeed([], periods, today, 'all')).toEqual([]);
   });

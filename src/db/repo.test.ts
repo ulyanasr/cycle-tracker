@@ -9,7 +9,7 @@ import {
   getSettings,
   isEmptyDayLog,
   normalizeDayLog,
-  rememberMedNames,
+  addKnownMedName,
   replaceAll,
   saveDayLog,
   savePeriods,
@@ -94,9 +94,20 @@ describe('дневник дня', () => {
     await saveDayLog(db, { date: '2026-10-15', note: 'болит' });
     expect(await getDayLog(db, '2026-10-15')).toEqual({ date: '2026-10-15', note: 'болит' });
   });
-  it('названия лекарств попадают в подсказки', async () => {
-    await saveDayLog(db, { date: '2026-10-15', meds: [{ name: 'Ибупрофен', dose: '400 мг' }] });
+  it('после сохранения из подсказок пропадает опечатка, удалённая из всех записей', async () => {
+    await addKnownMedName(db, 'Ибупрафен');
+    await saveDayLog(db, { date: '2026-10-15', meds: [{ name: 'Ибупрафен' }] });
+    expect((await getSettings(db)).knownMedNames).toEqual(['Ибупрафен']);
+    // исправила опечатку в записи
+    await addKnownMedName(db, 'Ибупрофен');
+    await saveDayLog(db, { date: '2026-10-15', meds: [{ name: 'Ибупрофен' }] });
     expect((await getSettings(db)).knownMedNames).toEqual(['Ибупрофен']);
+  });
+  it('название, которое есть в другой записи, после сохранения остаётся', async () => {
+    await addKnownMedName(db, 'Но-шпа');
+    await saveDayLog(db, { date: '2026-10-14', meds: [{ name: 'Но-шпа' }] });
+    await saveDayLog(db, { date: '2026-10-15', pain: 2 });
+    expect((await getSettings(db)).knownMedNames).toEqual(['Но-шпа']);
   });
 });
 
@@ -109,10 +120,11 @@ describe('настройки', () => {
     await updateSettings(db, { onboardingDone: true });
     expect(await getSettings(db)).toEqual({ onboardingDone: true, lastExportAt: null, knownMedNames: ['Но-шпа'] });
   });
-  it('подсказки: без дублей без учёта регистра, последние — первыми', async () => {
-    await rememberMedNames(db, ['Ибупрофен', 'Но-шпа']);
-    await rememberMedNames(db, ['ибупрофен', '  ', 'Парацетамол']);
-    expect((await getSettings(db)).knownMedNames).toEqual(['ибупрофен', 'Парацетамол', 'Но-шпа']);
+  it('«Добавить» сразу запоминает название: первым, без дубля, в новом написании', async () => {
+    await addKnownMedName(db, 'Ибупрофен');
+    await addKnownMedName(db, 'Но-шпа');
+    await addKnownMedName(db, ' ибупрофен ');
+    expect((await getSettings(db)).knownMedNames).toEqual(['ибупрофен', 'Но-шпа']);
   });
 });
 

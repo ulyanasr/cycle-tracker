@@ -153,6 +153,14 @@ describe('разная длина циклов', () => {
   });
 });
 
+describe('V = сегодня', () => {
+  it('первый вероятный день в календаре — сегодня', () => {
+    const ps = build('2026-08-20', [28]); // последние 17 сен → V = 15 окт
+    expect(status(ps, '2026-10-15')).toEqual({ kind: 'until', days: 0 });
+    expect(daysOfKind(ps, 'forecast', '2026-10-01', '2026-11-30', '2026-10-15')[0]).toBe('2026-10-15');
+  });
+});
+
 describe('все циклы окна одной длины', () => {
   const periods = build('2026-07-01', [28, 28, 28]); // последние 23 сен
   const today = '2026-10-10';
@@ -282,11 +290,10 @@ describe('задержка', () => {
     expect(cycleDay(periods, '2026-10-18')).toBe(32);
     expect(phaseOn(periods, '2026-10-18', '2026-10-18')).toBe('luteal');
   });
-  it('прошедшие прогнозные дни не закрашиваются, оставшиеся — да', () => {
-    const today = '2026-10-17';
-    expect(kind(periods, '2026-10-16', today)).toBeNull();
-    expect(kind(periods, '2026-10-17', today)).toBe('forecast');
-    expect(kind(periods, '2026-10-19', today)).toBe('forecast');
+  it('при задержке прогноз (вероятные и возможные дни) не рисуется', () => {
+    const today = '2026-10-17'; // V = 15 окт прошёл
+    expect(daysOfKind(periods, 'forecast', '2026-10-01', '2026-11-30', today)).toEqual([]);
+    expect(daysOfKind(periods, 'possible', '2026-10-01', '2026-11-30', today)).toEqual([]);
   });
 });
 

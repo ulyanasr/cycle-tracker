@@ -1,23 +1,50 @@
 import { describe, expect, it } from 'vitest';
-import { medDetails, suggestMeds } from './meds';
+import { medDetails, pruneMedNames, rememberMedName, suggestMedName } from './meds';
 
-const known = ['Ибупрофен', 'Но-шпа', 'Парацетамол', 'Нурофен', 'Магний B6', 'Йод', 'Витамин D'];
+describe('подсказка названия', () => {
+  const known = ['Ибупрофен', 'Нурофен', 'Но-шпа', 'Парацетамол'];
+  it.each([
+    ['иб', 'Ибупрофен'],
+    ['ИБУ', 'Ибупрофен'],
+    ['  иб ', 'Ибупрофен'],
+    ['И', 'Ибупрофен'],
+    ['па', 'Парацетамол'],
+    ['Н', 'Нурофен'], // первое в списке — последнее использованное
+  ])('«%s» → %s', (input, name) => {
+    expect(suggestMedName(input, known)).toBe(name);
+  });
+  it.each([
+    ['', 'пустой ввод'],
+    ['   ', 'одни пробелы'],
+    ['Аспирин', 'новое название'],
+    ['ибупрофен', 'уже полностью совпало'],
+    ['Нурофен Ф', 'текст перестал совпадать'],
+    ['профен', 'с середины слова не ищем'],
+  ])('«%s» → null (%s)', (input) => {
+    expect(suggestMedName(input, known)).toBeNull();
+  });
+});
 
-describe('подсказки лекарств', () => {
-  it('пустой ввод — последние 5', () => {
-    expect(suggestMeds(known, '')).toEqual(known.slice(0, 5));
+describe('rememberMedName', () => {
+  it('новое встаёт первым', () => {
+    expect(rememberMedName('Аспирин', ['Ибупрофен', 'Но-шпа'])).toEqual(['Аспирин', 'Ибупрофен', 'Но-шпа']);
   });
-  it('без учёта регистра', () => {
-    expect(suggestMeds(known, 'ибу')).toEqual(['Ибупрофен']);
+  it('уже известное — в начало без дубля, в новом написании', () => {
+    expect(rememberMedName('ибупрофен', ['Но-шпа', 'Ибупрофен'])).toEqual(['ибупрофен', 'Но-шпа']);
   });
-  it('сначала начинающиеся с ввода, потом содержащие', () => {
-    expect(suggestMeds(known, 'н')).toEqual(['Но-шпа', 'Нурофен', 'Ибупрофен', 'Магний B6', 'Витамин D']);
+});
+
+describe('pruneMedNames', () => {
+  it('название, удалённое из единственной записи, пропадает', () => {
+    expect(pruneMedNames(['Ибупрафен', 'Но-шпа'], [{ date: 'd', meds: [{ name: 'Но-шпа' }] }])).toEqual(['Но-шпа']);
   });
-  it('точное совпадение не подсказывается', () => {
-    expect(suggestMeds(known, 'йод')).toEqual([]);
+  it('название из другой записи остаётся, без учёта регистра', () => {
+    const logs = [{ date: 'a' }, { date: 'b', meds: [{ name: 'ибупрофен' }] }];
+    expect(pruneMedNames(['Ибупрофен'], logs)).toEqual(['Ибупрофен']);
   });
-  it('ничего не нашлось', () => {
-    expect(suggestMeds(known, 'аспирин')).toEqual([]);
+  it('порядок остальных сохраняется', () => {
+    const logs = [{ date: 'a', meds: [{ name: 'А' }, { name: 'В' }] }, { date: 'b', meds: [{ name: 'Б' }] }];
+    expect(pruneMedNames(['В', 'Х', 'А', 'Б'], logs)).toEqual(['В', 'А', 'Б']);
   });
 });
 

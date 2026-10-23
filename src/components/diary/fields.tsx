@@ -1,6 +1,6 @@
 // Блоки дневника: переключатель, шкала 1–5, чипы, лекарства
 import { useEffect, useId, useRef } from 'react';
-import { medDetails, suggestMeds } from '../../logic/meds';
+import { medDetails, suggestMedName } from '../../logic/meds';
 import { SCALE_LABELS, SCALE_TITLE, SCORE_COLOR, SCORES, type ScaleKind } from '../../logic/scales';
 import type { Medication, Score } from '../../logic/types';
 import { CloseIcon } from '../Icons';
@@ -95,7 +95,8 @@ export function MedsField({
   onDraft: (d: MedDraft) => void;
   onChange: (meds: Medication[]) => void;
 }) {
-  const hints = draft ? suggestMeds(known, draft.name) : [];
+  const hint = draft ? suggestMedName(draft.name, known) : null;
+  const hints = hint ? [hint] : [];
   const formRef = useRef<HTMLDivElement>(null);
 
   // На iPhone клавиатура закрывает низ экрана, и подсказки под полем оказываются
