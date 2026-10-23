@@ -39,12 +39,8 @@ function CycleCard({ c }: { c: HistoryCycle }) {
       <div className="cycle-bar" aria-hidden="true">
         <i className="is-period" style={{ width: pct(bar.period) }} />
         <i className="is-rest" style={{ width: pct(bar.rest) }} />
-        {bar.remaining > 0 && <i className="is-remaining" style={{ width: pct(bar.remaining) }} />}
       </div>
-      <p className="cycle-sub">
-        Месячные {daysLabel(c.periodDays)}
-        {c.current && c.expected ? ` · ожидаем ~${daysLabel(c.expected)}` : ''}
-      </p>
+      <p className="cycle-sub">Месячные {daysLabel(c.periodDays)}</p>
     </li>
   );
 }

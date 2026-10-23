@@ -17,6 +17,21 @@ export const isAtypical = (days: number) => days < ATYPICAL_MIN_DAYS || days > A
 
 export const byStart = (a: Period, b: Period) => a.start.localeCompare(b.start);
 
+/**
+ * Случайная лишняя отметка: завершённые месячные из одного дня ближе 21 дня
+ * к соседним. В календаре остаётся, в расчётах не участвует. Идущие сейчас
+ * месячные (end = null) учитываются всегда.
+ */
+export function isStrayMark(periods: Period[], i: number): boolean {
+  const p = periods[i];
+  if (p.end !== p.start) return false;
+  const near = (q?: Period) => q !== undefined && Math.abs(diffDays(q.start, p.start)) < ATYPICAL_MIN_DAYS;
+  return near(periods[i - 1]) || near(periods[i + 1]);
+}
+
+/** Месячные без лишних отметок — по ним идут все расчёты */
+export const countedPeriods = (periods: Period[]) => periods.filter((_, i) => !isStrayMark(periods, i));
+
 /** Для идущих сейчас месячных последний день — сегодня */
 export const effectiveEnd = (p: Period, today: DateStr) => p.end ?? today;
 
@@ -25,14 +40,18 @@ export interface Cycle {
   length: number;
 }
 
-/** Длина цикла — от начала одних месячных до начала следующих */
-export const completedCycles = (periods: Period[]): Cycle[] =>
-  periods.slice(1).map((p, i) => ({ start: periods[i].start, length: diffDays(p.start, periods[i].start) }));
+/** Длина цикла — от начала одних месячных до начала следующих, без лишних отметок */
+export function completedCycles(periods: Period[]): Cycle[] {
+  const ps = countedPeriods(periods);
+  return ps.slice(1).map((p, i) => ({ start: ps[i].start, length: diffDays(p.start, ps[i].start) }));
+}
 
 const average = (xs: number[]) => Math.round(xs.reduce((a, b) => a + b, 0) / xs.length);
 const typicalLengths = (cycles: Cycle[]) => cycles.map((c) => c.length).filter((d) => !isAtypical(d));
 const finishedLengths = (periods: Period[]) =>
-  periods.filter((p) => p.end !== null).map((p) => diffDays(p.end!, p.start) + 1);
+  countedPeriods(periods)
+    .filter((p) => p.end !== null)
+    .map((p) => diffDays(p.end!, p.start) + 1);
 
 export interface WindowStats {
   avgCycle: number;
@@ -79,7 +98,7 @@ export interface Forecast {
 }
 
 export function forecast(periods: Period[], stats = windowStats(periods)): Forecast | null {
-  const last = periods.at(-1);
+  const last = countedPeriods(periods).at(-1);
   if (!last) return null;
   const nextStart = addDays(last.start, stats.avgCycle);
   const ovulation = addDays(nextStart, -LUTEAL_DAYS);
@@ -99,7 +118,7 @@ export const isPeriodDay = (periods: Period[], date: DateStr, today: DateStr) =>
   periods.some((p) => inRange(date, p.start, effectiveEnd(p, today)));
 
 export function cycleDay(periods: Period[], date: DateStr): number | null {
-  const p = periods.findLast((p) => p.start <= date);
+  const p = countedPeriods(periods).findLast((p) => p.start <= date);
   return p ? diffDays(date, p.start) + 1 : null;
 }
 
@@ -110,7 +129,7 @@ export type Status =
   | { kind: 'delay'; days: number };
 
 export function status(periods: Period[], today: DateStr, f = forecast(periods)): Status {
-  const last = periods.at(-1);
+  const last = countedPeriods(periods).at(-1);
   if (!last || !f) return { kind: 'empty' };
   if (inRange(today, last.start, effectiveEnd(last, today))) {
     return { kind: 'period', day: diffDays(today, last.start) + 1 };
@@ -121,11 +140,12 @@ export function status(periods: Period[], today: DateStr, f = forecast(periods))
 
 /** Для прошлых циклов овуляция считается от фактического начала следующих месячных */
 export function phaseOn(periods: Period[], date: DateStr, today: DateStr, f = forecast(periods)): Phase | null {
-  const i = periods.findLastIndex((p) => p.start <= date);
+  const ps = countedPeriods(periods);
+  const i = ps.findLastIndex((p) => p.start <= date);
   if (i < 0) return null;
-  if (inRange(date, periods[i].start, effectiveEnd(periods[i], today))) return 'menstrual';
+  if (inRange(date, ps[i].start, effectiveEnd(ps[i], today))) return 'menstrual';
 
-  const ovulation = addDays(periods[i + 1]?.start ?? f!.nextStart, -LUTEAL_DAYS);
+  const ovulation = addDays(ps[i + 1]?.start ?? f!.nextStart, -LUTEAL_DAYS);
   if (date < addDays(ovulation, -5)) return 'follicular';
   if (date <= addDays(ovulation, 1)) return 'ovulatory';
   return 'luteal';
@@ -133,7 +153,7 @@ export function phaseOn(periods: Period[], date: DateStr, today: DateStr, f = fo
 
 /** Первые 2 дня после месячных — подсказка про мажущие выделения */
 export function isAfterPeriod(periods: Period[], today: DateStr): boolean {
-  const end = periods.at(-1)?.end;
+  const end = countedPeriods(periods).at(-1)?.end;
   if (!end) return false;
   const d = diffDays(today, end);
   return d >= 1 && d <= 2;

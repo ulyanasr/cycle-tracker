@@ -6,6 +6,7 @@ import {
   forecast,
   isAfterPeriod,
   isAtypical,
+  isStrayMark,
   phaseOn,
   status,
   windowStats,
@@ -207,6 +208,51 @@ describe('нетипичные циклы (< 21 или > 45 дней)', () => {
     const only = build('2026-01-01', [10, 60]);
     expect(windowStats(only)).toMatchObject({ avgCycle: 28, minCycle: 28 });
     expect(yearStats(only, 2026)).toMatchObject({ avgCycle: null, spread: null });
+  });
+});
+
+describe('случайная лишняя отметка (один день ближе 21 дня к соседним)', () => {
+  it('отметка последняя: прогноз и день цикла считаются от прошлых месячных', () => {
+    const ps = [P('2026-09-03', '2026-09-07'), P('2026-10-01', '2026-10-05'), P('2026-10-12', '2026-10-12')];
+    expect(isStrayMark(ps, 2)).toBe(true);
+    expect(forecast(ps)!.nextStart).toBe('2026-10-29'); // 1 окт + 28
+    expect(cycleDay(ps, '2026-10-15')).toBe(15);
+    expect(status(ps, '2026-10-15')).toEqual({ kind: 'until', days: 14 });
+  });
+  it('отметка внутри цикла: 1 и 29 окт + тап 11 окт — один цикл 28 дней, он в окне', () => {
+    const ps = [P('2026-09-03', '2026-09-07'), P('2026-10-01', '2026-10-05'), P('2026-10-11', '2026-10-11'), P('2026-10-29', '2026-11-02')];
+    expect(completedCycles(ps).map((c) => c.length)).toEqual([28, 28]);
+    expect(windowStats(ps)).toMatchObject({ avgCycle: 28, minCycle: 28, avgPeriod: 5 });
+    expect(forecast(ps)!.possibleFrom).toBeNull();
+  });
+  it('фаза прошлого дня не считается от отметки', () => {
+    const ps = [P('2026-09-03', '2026-09-07'), P('2026-10-01', '2026-10-05'), P('2026-10-11', '2026-10-11'), P('2026-10-29', '2026-11-02')];
+    // От 29 окт: овуляция 15 окт, окно 10–16 окт. От отметки 11 окт было бы 27 сен → «лютеиновая»
+    expect(phaseOn(ps, '2026-10-16', '2026-11-10')).toBe('ovulatory');
+    expect(phaseOn(ps, '2026-10-08', '2026-11-10')).toBe('follicular');
+  });
+  it('в календаре отметка остаётся красной', () => {
+    const ps = [P('2026-10-01', '2026-10-05'), P('2026-10-12', '2026-10-12')];
+    expect(kind(ps, '2026-10-12', '2026-10-15')).toBe('period');
+  });
+  it('идущие месячные через 15 дней после прошлых учитываются', () => {
+    const ps = [P('2026-10-01', '2026-10-05'), P('2026-10-16', null)];
+    expect(isStrayMark(ps, 1)).toBe(false);
+    expect(status(ps, '2026-10-17')).toEqual({ kind: 'period', day: 2 });
+    expect(forecast(ps)!.lastStart).toBe('2026-10-16');
+  });
+  it('месячные из одного дня в обычном цикле — не лишняя отметка', () => {
+    const ps = [P('2026-09-03', '2026-09-03'), P('2026-10-01', '2026-10-01')];
+    expect([isStrayMark(ps, 0), isStrayMark(ps, 1)]).toEqual([false, false]);
+    expect(windowStats(ps)).toMatchObject({ avgCycle: 28, avgPeriod: 1 });
+  });
+  it('граница: 20 дней до соседних — лишняя, 21 — нет', () => {
+    expect(isStrayMark([P('2026-10-01', '2026-10-05'), P('2026-10-21', '2026-10-21')], 1)).toBe(true);
+    expect(isStrayMark([P('2026-10-01', '2026-10-05'), P('2026-10-22', '2026-10-22')], 1)).toBe(false);
+  });
+  it('длина лишней отметки не влияет на средние месячные', () => {
+    const ps = [P('2026-09-03', '2026-09-07'), P('2026-10-01', '2026-10-05'), P('2026-10-12', '2026-10-12')];
+    expect(windowStats(ps).avgPeriod).toBe(5);
   });
 });
 
