@@ -64,6 +64,10 @@
 .cal-day.is-ovulation { color: #fff; }
 .cal-day.is-ovulation::before { background: var(--indigo); border-color: var(--indigo); }
 
+/* Возможные дни: без заливки, пунктир 2px */
+.cal-day.is-possible { color: var(--period-forecast-text); }
+.cal-day.is-possible::before { border: 2px dashed var(--coral); }
+
 /* Сегодня — поверх любого цвета */
 .cal-day.is-today { color: #fff; }
 .cal-day.is-today::before { background: var(--text); border-color: var(--text); }

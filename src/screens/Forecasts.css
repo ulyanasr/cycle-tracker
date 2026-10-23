@@ -28,6 +28,13 @@
   margin-top: 4px;
 }
 
+.forecast-card i.is-forecast { background: var(--period-forecast); }
+.forecast-card i.is-possible { border: 1.5px dashed var(--coral); }
+.forecast-card i.is-period { background: var(--coral); }
+.forecast-card i.is-ovulation { background: var(--indigo); }
+.forecast-card i.is-fertile { background: var(--fertile); }
+.forecast-card i.is-teal { background: var(--teal); }
+
 .forecast-card h2,
 .forecast-note h2 {
   font-size: 17px;

@@ -19,25 +19,26 @@
   border-radius: var(--r-pill);
   display: grid;
   place-items: center;
-  transition: transform 0.12s;
+  background: var(--nav-dark);
+  border: 1px solid var(--nav-dark-border);
+  color: var(--nav-icon);
+  transition: transform 0.15s, background 0.15s;
 }
 
-.nav-btn:active {
-  transform: scale(0.94);
-}
-
-.nav-home {
-  background: #ffffff;
-  color: #111114;
+.nav-btn.is-active {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: var(--text);
 }
 
 .nav-add {
-  background: var(--lime);
-  color: #111114;
+  background: #fff;
+  border-color: #fff;
+  color: var(--text);
 }
 
-.nav-notes {
-  background: var(--nav-dark);
-  border: 1px solid var(--nav-dark-border);
-  color: #ffffff;
+.nav-add.is-pressed {
+  transform: scale(0.92);
+  background: var(--border);
+  border-color: var(--border);
 }

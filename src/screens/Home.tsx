@@ -11,7 +11,7 @@ import { backupBanner } from '../logic/backup';
 import { dayKind, forecast, type Status } from '../logic/cycle';
 import { toDate, type DateStr } from '../logic/dates';
 import { homeSummary } from '../logic/home';
-import { capitalize, monthName, monthOf, shiftMonth } from '../logic/months';
+import { capitalize, monthCells, monthName, monthOf, shiftMonth } from '../logic/months';
 import { finishPeriod, startPeriod, toggleDay } from '../logic/periods';
 import { PHASE_TITLE } from '../logic/phaseTexts';
 import { daysLabel, plural } from '../logic/plural';
@@ -54,6 +54,13 @@ export function Home({ onMenu, onOpenDay }: Props) {
   const summary = useMemo(() => homeSummary(periods, today), [periods, today]);
   const f = useMemo(() => forecast(periods), [periods]);
   const { label, value } = statusText(summary.status);
+
+  // В режиме «Изменить» прогноз не рисуется, чтобы его пунктир не путался с пунктиром для отметки
+  const kindOf = (d: DateStr) => {
+    const k = dayKind(periods, d, today, f);
+    return editing && (k === 'forecast' || k === 'possible') ? null : k;
+  };
+  const hasPossible = monthCells(month).some((d) => d !== null && kindOf(d) === 'possible');
 
   const onTapDay = (date: DateStr) => {
     if (editing) updatePeriods(db, (ps) => toggleDay(ps, date, today));
@@ -103,7 +110,7 @@ export function Home({ onMenu, onOpenDay }: Props) {
           )}
           {summary.button === 'finish' && (
             <button className="period-btn" onClick={() => updatePeriods(db, (ps) => finishPeriod(ps, today))}>
-              <i aria-hidden="true" /> Закончились сегодня
+              <i className="is-lavender" aria-hidden="true" /> Закончились сегодня
             </button>
           )}
         </div>
@@ -138,7 +145,7 @@ export function Home({ onMenu, onOpenDay }: Props) {
           today={today}
           editing={editing}
           pressable={editing}
-          kindOf={(d) => dayKind(periods, d, today, f)}
+          kindOf={kindOf}
           onTap={onTapDay}
           header={
             <>
@@ -168,6 +175,8 @@ export function Home({ onMenu, onOpenDay }: Props) {
         />
         <ul className="legend" aria-label="Обозначения">
           <li><i className="dot-period" />Месячные</li>
+          <li><i className="dot-forecast" />Прогноз</li>
+          {hasPossible && <li><i className="dot-possible" />Возможно</li>}
           <li><i className="dot-fertile" />Фертильное окно</li>
           <li><i className="dot-ovulation" />Овуляция</li>
         </ul>

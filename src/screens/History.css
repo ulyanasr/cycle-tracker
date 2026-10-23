@@ -1,22 +1,20 @@
 .year-switch {
   display: flex;
-  gap: 8px;
+  padding: 4px;
+  border-radius: var(--r-pill);
+  background: var(--btn-gray);
 }
 
 .year-switch button {
-  min-height: 44px;
+  min-height: 40px;
   padding: 0 18px;
   border-radius: var(--r-pill);
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--caption);
   font-size: 16px;
   font-weight: 700;
 }
 
 .year-switch button.is-on {
   background: var(--text);
-  border-color: var(--text);
   color: #fff;
 }
 
@@ -100,7 +98,8 @@
 }
 
 .cycle-head b {
-  font-size: 18px;
+  font-size: 17px;
+  white-space: nowrap;
 }
 
 .cycle-head span {
@@ -129,7 +128,6 @@
 
 .cycle-bar .is-period { background: var(--coral); }
 .cycle-bar .is-rest { background: var(--fertile-2); }
-.cycle-bar .is-remaining { background: var(--border); }
 
 .cycle-sub {
   font-size: 14px;
@@ -159,12 +157,28 @@
   color: var(--caption);
 }
 
-/* Пропуск в отметках — светлая карточка с пунктиром */
-.cycle-card.is-gap {
-  background: #fff;
-  border: 1.5px dashed var(--border);
+.cycle-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.cycle-card.is-gap .cycle-head span {
+.atypical-pill {
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--border);
+  color: var(--text-2);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.cycle-bar.is-faded {
+  opacity: 0.5;
+}
+
+.cycle-note {
+  margin-top: -4px;
+  font-size: 14px;
+  line-height: 1.4;
   color: var(--caption);
 }

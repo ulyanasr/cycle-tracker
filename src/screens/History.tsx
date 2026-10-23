@@ -16,31 +16,26 @@ type View = { kind: 'year'; year: number } | { kind: 'archive' };
 const dayMonth = (d: string) => shortDate(d).split(',')[0];
 
 function CycleCard({ c }: { c: HistoryCycle }) {
-  // Пропуск в отметках: без полоски, в средние не входит
-  if (c.atypical) {
-    return (
-      <li className="cycle-card is-gap">
-        <div className="cycle-head">
-          <b>{dayMonth(c.start)} — {dayMonth(c.end!)}</b>
-          <span>пропуск в отметках</span>
-        </div>
-        <p className="cycle-sub">Месячные {daysLabel(c.periodDays)} · промежуток {daysLabel(c.days)}, в средние не входит</p>
-      </li>
-    );
-  }
   const bar = barParts(c);
   const pct = (x: number) => `${(x * 100).toFixed(2)}%`;
+  const marks = c.strayMarks.map(dayMonth).join(', ');
   return (
     <li className="cycle-card">
       <div className="cycle-head">
         <b>{dayMonth(c.start)} — {c.end ? dayMonth(c.end) : 'сейчас'}</b>
-        <span>{c.current ? `идёт ${c.days}-й день` : daysLabel(c.days)}</span>
+        <span>
+          {c.atypical && <em className="atypical-pill">нетипичный</em>}
+          {c.current ? `идёт ${c.days}-й день` : daysLabel(c.days)}
+        </span>
       </div>
-      <div className="cycle-bar" aria-hidden="true">
+      <div className={`cycle-bar ${c.atypical ? 'is-faded' : ''}`} aria-hidden="true">
         <i className="is-period" style={{ width: pct(bar.period) }} />
         <i className="is-rest" style={{ width: pct(bar.rest) }} />
       </div>
       <p className="cycle-sub">Месячные {daysLabel(c.periodDays)}</p>
+      {c.atypical && <p className="cycle-note">Не учитывается в прогнозе. Проверь отметки в календаре.</p>}
+      {c.strayMarks.length === 1 && <p className="cycle-note">Отметка {marks} не учитывается. Проверь её в календаре.</p>}
+      {c.strayMarks.length > 1 && <p className="cycle-note">Отметки {marks} не учитываются. Проверь их в календаре.</p>}
     </li>
   );
 }
@@ -66,7 +61,7 @@ export function History({ onBack }: { onBack: () => void }) {
         <button className="round-btn" aria-label="Назад" onClick={back}>
           <BackIcon />
         </button>
-        <div className="year-switch" role="group" aria-label="Период">
+        <div className="year-switch" role="group" aria-label="Год">
           <button
             className={view.kind === 'year' && !isPast ? 'is-on' : ''}
             aria-pressed={view.kind === 'year' && !isPast}
@@ -129,7 +124,7 @@ export function History({ onBack }: { onBack: () => void }) {
             </div>
           )}
           <section className="history-section">
-            <h2 className="section-caption">Циклы {year}</h2>
+            {isPast && <h2 className="section-caption">Циклы {year}</h2>}
             {cycles.length === 0 ? (
               <p className="history-empty">В этом году отметок пока нет.</p>
             ) : (

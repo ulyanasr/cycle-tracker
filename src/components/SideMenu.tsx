@@ -1,9 +1,7 @@
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { exportBackup, useBackupData } from '../db/backupIO';
-import { useToday } from '../hooks/useToday';
-import { yearStats } from '../logic/cycle';
-import { yearOf } from '../logic/dates';
+import { windowStats } from '../logic/cycle';
 import { ChartIcon, CloseIcon, DownloadIcon, InfoIcon, UploadIcon } from './Icons';
 import { ImportButton } from './ImportButton';
 import './Overlays.css';
@@ -17,9 +15,8 @@ type Props = {
 };
 
 export function SideMenu({ open, onClose, onHistory, onForecasts }: Props) {
-  const today = useToday();
   const data = useBackupData();
-  const stats = data ? yearStats(data.periods, yearOf(today)) : null;
+  const stats = data ? windowStats(data.periods) : null;
   const lastExport = data?.settings.lastExportAt;
 
   const onExport = async () => {

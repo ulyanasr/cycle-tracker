@@ -86,6 +86,10 @@
   background: var(--coral);
 }
 
+.period-btn i.is-lavender {
+  background: var(--fertile-2);
+}
+
 .period-btn:active {
   transform: scale(0.98);
 }
@@ -209,6 +213,8 @@
 }
 
 .dot-period { background: var(--coral); }
+.dot-forecast { background: var(--period-forecast); }
+.dot-possible { border: 1.5px dashed var(--coral); }
 .dot-fertile { background: var(--fertile-2); }
 .dot-ovulation { background: var(--indigo); }
 
