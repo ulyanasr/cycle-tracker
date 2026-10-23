@@ -6,14 +6,19 @@ import type { Period } from './types';
 export const DEFAULT_CYCLE = 28;
 export const DEFAULT_PERIOD = 5;
 export const LUTEAL_DAYS = 14;
-/**
- * Промежуток длиннее этого — не цикл, а пропуск в отметках (например,
- * не отмечала с января по август). В средние, минимум, максимум и разброс
- * он не входит, иначе прогноз ломается.
- */
-export const MAX_CYCLE_DAYS = 60;
 
-export const isGap = (cycleLength: number) => cycleLength > MAX_CYCLE_DAYS;
+/**
+ * Нетипичный цикл: короче 21 или длиннее 45 дней. Чаще всего это случайная
+ * лишняя или пропущенная отметка. Такие циклы показываются в истории, но не
+ * участвуют ни в одном расчёте (средние, минимум, разброс).
+ */
+export const ATYPICAL_MIN_DAYS = 21;
+export const ATYPICAL_MAX_DAYS = 45;
+export const isAtypical = (cycleLength: number) =>
+  cycleLength < ATYPICAL_MIN_DAYS || cycleLength > ATYPICAL_MAX_DAYS;
+
+/** Прогноз строится по последним N типичным циклам, независимо от года */
+export const FORECAST_WINDOW = 6;
 
 export type Phase = 'menstrual' | 'follicular' | 'ovulatory' | 'luteal';
 
@@ -56,78 +61,107 @@ export const completedCycles = (periods: Period[]): CycleRecord[] => {
   return out;
 };
 
-export interface Stats {
+const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+
+const periodLength = (p: Period) => diffDays(p.end as DateStr, p.start) + 1;
+
+export interface WindowStats {
   avgCycle: number;
-  avgPeriod: number;
   minCycle: number;
-  maxCycle: number;
-  /** ±N дней: (макс − мин) / 2 */
-  spread: number;
+  avgPeriod: number;
+  /** Сколько типичных циклов и завершённых месячных попало в окно */
   cycleCount: number;
   periodCount: number;
 }
 
-const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
-
 /**
- * Средние по году year (по умолчанию — текущий). Цикл относится к году,
- * в котором он начался. Пропуски в отметках (> 60 дней) не учитываются.
- * Пока данных нет — 28 и 5 дней.
+ * Окно прогноза: последние 6 типичных завершённых циклов и последние 6
+ * завершённых месячных, независимо от календарного года — поэтому в январе
+ * прогноз не откатывается к 28/5. Пока типичных циклов нет: 28 дней,
+ * минимум = средний; пока нет завершённых месячных — 5 дней.
+ * Это же значение «Средний цикл» на главной и в меню.
  */
-export const yearStats = (periods: Period[], year: number): Stats => {
+export const windowStats = (periods: Period[]): WindowStats => {
   const cycles = completedCycles(periods)
-    .filter((c) => yearOf(c.start) === year && !isGap(c.length))
+    .filter((c) => !isAtypical(c.length))
+    .slice(-FORECAST_WINDOW)
     .map((c) => c.length);
-  const lengths = periods
-    .filter((p) => p.end !== null && yearOf(p.start) === year)
-    .map((p) => diffDays(p.end as DateStr, p.start) + 1);
+  const lengths = sortPeriods(periods)
+    .filter((p) => p.end !== null)
+    .slice(-FORECAST_WINDOW)
+    .map(periodLength);
 
   const avgCycle = cycles.length ? Math.round(mean(cycles)) : DEFAULT_CYCLE;
-  const minCycle = cycles.length ? Math.min(...cycles) : avgCycle;
-  const maxCycle = cycles.length ? Math.max(...cycles) : avgCycle;
   return {
     avgCycle,
+    minCycle: cycles.length ? Math.min(...cycles) : avgCycle,
     avgPeriod: lengths.length ? Math.round(mean(lengths)) : DEFAULT_PERIOD,
-    minCycle,
-    maxCycle,
-    spread: Math.round((maxCycle - minCycle) / 2),
     cycleCount: cycles.length,
     periodCount: lengths.length,
+  };
+};
+
+export interface YearStats {
+  /** null — в году нет типичных завершённых циклов (на экране «—») */
+  avgCycle: number | null;
+  /** ±N дней: (макс − мин) / 2 */
+  spread: number | null;
+  /** null — в году нет завершённых месячных */
+  avgPeriod: number | null;
+  cycleCount: number;
+}
+
+/**
+ * Статистика за год — только для «Истории циклов». Цикл относится к году,
+ * в котором начался; нетипичные не учитываются.
+ */
+export const yearStats = (periods: Period[], year: number): YearStats => {
+  const cycles = completedCycles(periods)
+    .filter((c) => yearOf(c.start) === year && !isAtypical(c.length))
+    .map((c) => c.length);
+  const lengths = periods.filter((p) => p.end !== null && yearOf(p.start) === year).map(periodLength);
+  return {
+    avgCycle: cycles.length ? Math.round(mean(cycles)) : null,
+    spread: cycles.length ? Math.round((Math.max(...cycles) - Math.min(...cycles)) / 2) : null,
+    avgPeriod: lengths.length ? Math.round(mean(lengths)) : null,
+    cycleCount: cycles.length,
   };
 };
 
 /* ---------------- Прогноз на следующий цикл ---------------- */
 
 export interface Forecast {
-  /** Наиболее вероятное начало следующих месячных */
+  /** V — наиболее вероятное начало: начало последних + средний цикл */
   nextStart: DateStr;
-  /** Диапазон вероятного начала: по минимальному и максимальному циклу */
-  rangeStart: DateStr;
-  rangeEnd: DateStr;
-  /** Прогнозные дни следующих месячных: rangeStart … nextStart + средние − 1 */
-  periodFrom: DateStr;
-  periodTo: DateStr;
-  /** Прогнозный конец идущих сейчас месячных, иначе null */
+  /** Вероятные дни: V … V + средние месячные − 1 (розовые) */
+  probableTo: DateStr;
+  /**
+   * Возможные дни — только с ранней стороны: от начала последних + минимальный
+   * цикл до V − 1 (пунктир). null, если все циклы окна одной длины.
+   */
+  possibleFrom: DateStr | null;
+  possibleTo: DateStr | null;
+  /** Прогнозный конец идущих сейчас месячных (эти дни тоже вероятные), иначе null */
   currentEnd: DateStr | null;
   ovulation: DateStr;
   fertileFrom: DateStr;
   fertileTo: DateStr;
 }
 
-export const forecast = (periods: Period[], today: DateStr): Forecast | null => {
+export const forecast = (periods: Period[], _today?: DateStr): Forecast | null => {
   const last = lastPeriod(periods);
   if (!last) return null;
-  const s = yearStats(periods, yearOf(today));
+  const s = windowStats(periods);
 
   const nextStart = addDays(last.start, s.avgCycle);
-  const rangeStart = addDays(last.start, s.minCycle);
+  const earliest = addDays(last.start, s.minCycle);
+  const hasPossible = earliest < nextStart;
   const ovulation = addDays(nextStart, -LUTEAL_DAYS);
   return {
     nextStart,
-    rangeStart,
-    rangeEnd: addDays(last.start, s.maxCycle),
-    periodFrom: rangeStart,
-    periodTo: addDays(nextStart, s.avgPeriod - 1),
+    probableTo: addDays(nextStart, s.avgPeriod - 1),
+    possibleFrom: hasPossible ? earliest : null,
+    possibleTo: hasPossible ? addDays(nextStart, -1) : null,
     currentEnd: last.end === null ? addDays(last.start, s.avgPeriod - 1) : null,
     ovulation,
     fertileFrom: addDays(ovulation, -5),
@@ -193,13 +227,14 @@ export const isAfterPeriod = (periods: Period[], today: DateStr): boolean => {
 
 /* ---------------- Цвета дней в календаре ---------------- */
 
-export type DayKind = 'period' | 'forecast' | 'ovulation' | 'fertile' | null;
+export type DayKind = 'period' | 'forecast' | 'possible' | 'ovulation' | 'fertile' | null;
 
 /**
- * Как закрасить день. Отмеченные месячные важнее прогноза.
- * Прогноз месячных показываем только с сегодняшнего дня: прошедший день
- * без отметки — это не месячные. Фертильное окно и овуляцию текущего
- * цикла показываем и в прошлом, чтобы было видно, где они были.
+ * Как закрасить день. Приоритет: отмеченные месячные → вероятные дни →
+ * овуляция → фертильное окно → возможные дни.
+ * Прогноз (вероятные и возможные) — только с сегодняшнего дня: прошедший день
+ * без отметки — это не месячные. Фертильное окно и овуляцию текущего цикла
+ * показываем и в прошлом, чтобы было видно, где они были.
  */
 export const dayKind = (
   periods: Period[],
@@ -209,14 +244,17 @@ export const dayKind = (
 ): DayKind => {
   if (isPeriodDay(periods, date, today)) return 'period';
   if (!f) return null;
-  if (date >= today) {
+  const future = date >= today;
+  if (future) {
     if (f.currentEnd && inRange(date, today, f.currentEnd)) return 'forecast';
-    if (inRange(date, f.periodFrom, f.periodTo)) return 'forecast';
+    if (inRange(date, f.nextStart, f.probableTo)) return 'forecast';
   }
   // Окно — только у текущего цикла: после начала последних месячных
   const last = lastPeriod(periods)!;
-  if (date <= last.start) return null;
-  if (date === f.ovulation) return 'ovulation';
-  if (inRange(date, f.fertileFrom, f.fertileTo)) return 'fertile';
+  if (date > last.start) {
+    if (date === f.ovulation) return 'ovulation';
+    if (inRange(date, f.fertileFrom, f.fertileTo)) return 'fertile';
+  }
+  if (future && f.possibleFrom && f.possibleTo && inRange(date, f.possibleFrom, f.possibleTo)) return 'possible';
   return null;
 };

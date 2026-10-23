@@ -1,9 +1,9 @@
 // «История циклов» (5.6): циклы выбранного года, новые сверху
-import { effectiveEnd, isGap, sortPeriods, yearStats } from './cycle';
+import { effectiveEnd, isAtypical, sortPeriods, windowStats } from './cycle';
 import { addDays, diffDays, yearOf, type DateStr } from './dates';
 import type { Period } from './types';
 
-/** Ширина полоски: 35 дней = 100% */
+/** Ширина полоски: 35 дней = 100%, длиннее — тоже 100% */
 export const BAR_MAX_DAYS = 35;
 
 export interface HistoryCycle {
@@ -16,13 +16,13 @@ export interface HistoryCycle {
   current: boolean;
   /** Для текущего: ожидаемая длина (средний цикл) */
   expected: number | null;
-  /** Пропуск в отметках: длиннее 60 дней, в средние не входит */
-  gap: boolean;
+  /** Нетипичный (< 21 или > 45 дней): не участвует в расчётах */
+  atypical: boolean;
 }
 
 export function yearCycles(periods: Period[], year: number, today: DateStr): HistoryCycle[] {
   const sorted = sortPeriods(periods);
-  const avg = yearStats(periods, yearOf(today)).avgCycle;
+  const avg = windowStats(periods).avgCycle;
   const out: HistoryCycle[] = [];
   sorted.forEach((p, i) => {
     if (yearOf(p.start) !== year) return;
@@ -36,10 +36,10 @@ export function yearCycles(periods: Period[], year: number, today: DateStr): His
         periodDays,
         current: false,
         expected: null,
-        gap: isGap(diffDays(next.start, p.start)),
+        atypical: isAtypical(diffDays(next.start, p.start)),
       });
     } else {
-      out.push({ start: p.start, end: null, days: diffDays(today, p.start) + 1, periodDays, current: true, expected: avg, gap: false });
+      out.push({ start: p.start, end: null, days: diffDays(today, p.start) + 1, periodDays, current: true, expected: avg, atypical: false });
     }
   });
   return out.reverse();

@@ -11,6 +11,7 @@ const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const KIND_LABEL: Record<Exclude<DayKind, null>, string> = {
   period: 'месячные',
   forecast: 'прогноз месячных',
+  possible: 'возможно начало месячных',
   fertile: 'фертильное окно',
   ovulation: 'овуляция',
 };

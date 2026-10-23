@@ -5,8 +5,10 @@ import {
   dayKind,
   forecast,
   isAfterPeriod,
+  isAtypical,
   phaseOn,
   status,
+  windowStats,
   yearStats,
 } from './cycle';
 import { addDays, diffDays } from './dates';
@@ -14,6 +16,24 @@ import type { Period } from './types';
 
 let n = 0;
 const P = (start: string, end: string | null): Period => ({ id: `p${++n}`, start, end });
+
+/** Месячные по 5 дней (если не указано): первые с start, дальше через длины циклов */
+const build = (start: string, cycles: number[], len = 5): Period[] => {
+  let s = start;
+  const out = [P(s, addDays(s, len - 1))];
+  for (const c of cycles) {
+    s = addDays(s, c);
+    out.push(P(s, addDays(s, len - 1)));
+  }
+  return out;
+};
+
+/** Дни с данным цветом в календаре на отрезке from…to */
+const daysOfKind = (periods: Period[], kind: string, from: string, to: string, today: string) => {
+  const out: string[] = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) if (dayKind(periods, d, today) === kind) out.push(d);
+  return out;
+};
 
 describe('даты', () => {
   it('февраль 28 дней (2026)', () => {
@@ -38,10 +58,11 @@ describe('даты', () => {
 
 describe('нет данных', () => {
   const today = '2026-10-15';
-  it('средние по умолчанию: 28 и 5, разброс 0', () => {
-    expect(yearStats([], 2026)).toEqual({
-      avgCycle: 28, avgPeriod: 5, minCycle: 28, maxCycle: 28, spread: 0, cycleCount: 0, periodCount: 0,
-    });
+  it('окно по умолчанию: 28 и 5, минимум = средний', () => {
+    expect(windowStats([])).toEqual({ avgCycle: 28, minCycle: 28, avgPeriod: 5, cycleCount: 0, periodCount: 0 });
+  });
+  it('статистика года без данных — «—»', () => {
+    expect(yearStats([], 2026)).toEqual({ avgCycle: null, spread: null, avgPeriod: null, cycleCount: 0 });
   });
   it('прогноза, статуса, фазы и дня цикла нет', () => {
     expect(forecast([], today)).toBeNull();
@@ -57,20 +78,16 @@ describe('одни месячные (ни одного завершённого 
   const today = '2026-10-15';
 
   it('цикл по умолчанию 28, месячные — по факту (4 дня)', () => {
-    const s = yearStats(periods, 2026);
-    expect(s.avgCycle).toBe(28);
-    expect(s.avgPeriod).toBe(4);
-    expect(s.cycleCount).toBe(0);
+    expect(windowStats(periods)).toMatchObject({ avgCycle: 28, minCycle: 28, avgPeriod: 4, cycleCount: 0 });
   });
-  it('прогноз: 1 окт + 28 = 29 окт, диапазон из одного дня', () => {
+  it('прогноз: 1 окт + 28 = 29 окт, вероятные 29 окт – 1 ноя, возможных нет', () => {
     const f = forecast(periods, today)!;
     expect(f.nextStart).toBe('2026-10-29');
-    expect(f.rangeStart).toBe('2026-10-29');
-    expect(f.rangeEnd).toBe('2026-10-29');
-    expect(f.periodFrom).toBe('2026-10-29');
-    expect(f.periodTo).toBe('2026-11-01'); // 29 окт + 4 − 1
+    expect(f.probableTo).toBe('2026-11-01'); // 29 окт + 4 − 1
+    expect(f.possibleFrom).toBeNull();
+    expect(f.possibleTo).toBeNull();
   });
-  it('овуляция = прогноз − 14, окно = овуляция −5 … +1', () => {
+  it('овуляция = V − 14, окно = овуляция −5 … +1', () => {
     const f = forecast(periods, today)!;
     expect(f.ovulation).toBe('2026-10-15');
     expect(f.fertileFrom).toBe('2026-10-10');
@@ -85,11 +102,8 @@ describe('одни месячные (ни одного завершённого 
 describe('один завершённый цикл', () => {
   const periods = [P('2026-09-01', '2026-09-05'), P('2026-09-30', '2026-10-03')];
   it('цикл 29 дней, месячные среднее (5+4)/2 = 4.5 → 5', () => {
-    const s = yearStats(periods, 2026);
-    expect(s.avgCycle).toBe(29);
-    expect(s.avgPeriod).toBe(5);
-    expect(s.spread).toBe(0);
-    expect(s.cycleCount).toBe(1);
+    expect(windowStats(periods)).toMatchObject({ avgCycle: 29, minCycle: 29, avgPeriod: 5, cycleCount: 1 });
+    expect(yearStats(periods, 2026)).toEqual({ avgCycle: 29, spread: 0, avgPeriod: 5, cycleCount: 1 });
   });
   it('прогноз от начала последних: 30 сен + 29 = 29 окт', () => {
     expect(forecast(periods, '2026-10-10')!.nextStart).toBe('2026-10-29');
@@ -97,67 +111,118 @@ describe('один завершённый цикл', () => {
 });
 
 describe('разная длина циклов', () => {
-  // Циклы: 26, 30, 28 → среднее 28, мин 26, макс 30, разброс ±2
-  const periods = [
-    P('2026-06-01', '2026-06-05'),
-    P('2026-06-27', '2026-07-01'),
-    P('2026-07-27', '2026-07-31'),
-    P('2026-08-24', '2026-08-28'),
-  ];
-  it('среднее, минимум, максимум, разброс', () => {
+  // Циклы: 26, 30, 28 → среднее 28, мин 26, макс 30, разброс ±2. Последние — 24 авг
+  const periods = build('2026-06-01', [26, 30, 28]);
+  const today = '2026-09-10';
+  it('среднее и минимум окна, разброс за год', () => {
     expect(completedCycles(periods).map((c) => c.length)).toEqual([26, 30, 28]);
-    const s = yearStats(periods, 2026);
-    expect(s).toMatchObject({ avgCycle: 28, minCycle: 26, maxCycle: 30, spread: 2, cycleCount: 3 });
+    expect(windowStats(periods)).toMatchObject({ avgCycle: 28, minCycle: 26, cycleCount: 3 });
+    expect(yearStats(periods, 2026)).toMatchObject({ avgCycle: 28, spread: 2, cycleCount: 3 });
   });
   it('разброс округляется: циклы 27 и 30 → 1.5 → ±2', () => {
-    const p = [P('2026-01-01', '2026-01-05'), P('2026-01-28', '2026-02-01'), P('2026-02-27', '2026-03-03')];
-    expect(yearStats(p, 2026).spread).toBe(2);
+    expect(yearStats(build('2026-01-01', [27, 30]), 2026).spread).toBe(2);
   });
   it('среднее округляется до целого: 27 и 28 → 27.5 → 28', () => {
-    const p = [P('2026-01-01', '2026-01-05'), P('2026-01-28', '2026-02-01'), P('2026-02-25', '2026-03-01')];
-    expect(yearStats(p, 2026).avgCycle).toBe(28);
+    expect(windowStats(build('2026-01-01', [27, 28])).avgCycle).toBe(28);
+    expect(yearStats(build('2026-01-01', [27, 28]), 2026).avgCycle).toBe(28);
   });
-  it('диапазон и прогнозные дни: от начала + мин до вероятного начала + средние − 1', () => {
-    const f = forecast(periods, '2026-09-10')!;
+  it('V = начало + средний; вероятные V … V+4; возможные от начала + мин до V − 1', () => {
+    const f = forecast(periods, today)!;
     expect(f.nextStart).toBe('2026-09-21'); // 24 авг + 28
-    expect(f.rangeStart).toBe('2026-09-19'); // + 26
-    expect(f.rangeEnd).toBe('2026-09-23'); // + 30
-    expect(f.periodFrom).toBe('2026-09-19');
-    expect(f.periodTo).toBe('2026-09-25'); // 21 сен + 5 − 1
+    expect(f.probableTo).toBe('2026-09-25'); // 21 сен + 5 − 1
+    expect(f.possibleFrom).toBe('2026-09-19'); // 24 авг + 26
+    expect(f.possibleTo).toBe('2026-09-20');
   });
-  it('в календаре прогнозные дни закрашены с начала диапазона', () => {
-    const today = '2026-09-10';
-    expect(dayKind(periods, '2026-09-18', today)).toBeNull();
-    expect(dayKind(periods, '2026-09-19', today)).toBe('forecast');
-    expect(dayKind(periods, '2026-09-25', today)).toBe('forecast');
+  it('календарь: пунктир с ранней стороны, розовые с V, после прогноза — ничего', () => {
+    expect(daysOfKind(periods, 'possible', '2026-09-11', '2026-10-05', today)).toEqual(['2026-09-19', '2026-09-20']);
+    expect(daysOfKind(periods, 'forecast', '2026-09-11', '2026-10-05', today))
+      .toEqual(['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25']);
+    // Максимальный цикл (30 → 23 сен) не даёт пунктира после вероятных дней
     expect(dayKind(periods, '2026-09-26', today)).toBeNull();
+    expect(dayKind(periods, '2026-09-27', today)).toBeNull();
+  });
+  it('первый вероятный день = день из «До месячных N дней»', () => {
+    const s = status(periods, today);
+    expect(s).toEqual({ kind: 'until', days: 11 });
+    const cardDay = addDays(today, 11);
+    expect(daysOfKind(periods, 'forecast', today, '2026-10-31', today)[0]).toBe(cardDay);
+  });
+  it('при задержке ранние возможные дни уже прошли и не рисуются', () => {
+    expect(daysOfKind(periods, 'possible', '2026-09-01', '2026-10-05', '2026-09-23')).toEqual([]);
   });
 });
 
-describe('пропуски в отметках (цикл длиннее 60 дней)', () => {
-  // Циклы: 28, 213 (не отмечала с февраля по сентябрь), 30
-  const periods = [
-    P('2026-01-05', '2026-01-09'),
-    P('2026-02-02', '2026-02-06'),
-    P('2026-09-03', '2026-09-07'),
-    P('2026-10-03', '2026-10-07'),
-  ];
-  it('пропуск не входит в средний цикл, минимум, максимум и разброс', () => {
-    expect(yearStats(periods, 2026)).toMatchObject({ avgCycle: 29, minCycle: 28, maxCycle: 30, spread: 1, cycleCount: 2 });
+describe('все циклы окна одной длины', () => {
+  const periods = build('2026-07-01', [28, 28, 28]); // последние 23 сен
+  const today = '2026-10-10';
+  it('возможных дней нет, вероятных ровно столько, сколько средние месячные', () => {
+    const f = forecast(periods, today)!;
+    expect(f.possibleFrom).toBeNull();
+    expect(daysOfKind(periods, 'possible', today, '2026-11-30', today)).toEqual([]);
+    expect(daysOfKind(periods, 'forecast', today, '2026-11-30', today))
+      .toEqual(['2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25']);
   });
-  it('месячные вокруг пропуска в средней длине месячных учитываются', () => {
-    expect(yearStats(periods, 2026)).toMatchObject({ avgPeriod: 5, periodCount: 4 });
+  it('первый вероятный день = день из карточки', () => {
+    const s = status(periods, today);
+    expect(s.kind === 'until' && addDays(today, s.days)).toBe('2026-10-21');
   });
-  it('прогноз строится по настоящим циклам', () => {
-    expect(forecast(periods, '2026-10-15')!.nextStart).toBe('2026-11-01'); // 3 окт + 29
+});
+
+describe('окно из 6 последних циклов', () => {
+  it('старый короткий цикл влияет на диапазон, пока он в окне', () => {
+    const ps = build('2026-01-01', [22, 28, 28, 28, 28, 28]); // 6 циклов, 22 ещё в окне
+    expect(windowStats(ps)).toMatchObject({ minCycle: 22, cycleCount: 6 });
+    expect(forecast(ps)!.possibleFrom).not.toBeNull();
   });
-  it('граница: 60 дней — цикл, 61 — пропуск', () => {
-    expect(yearStats([P('2026-01-01', '2026-01-05'), P('2026-03-02', '2026-03-06')], 2026).cycleCount).toBe(1); // 60
-    expect(yearStats([P('2026-01-01', '2026-01-05'), P('2026-03-03', '2026-03-07')], 2026).cycleCount).toBe(0); // 61
+  it('после 6 новых циклов короткий выходит из окна, возможных дней больше нет', () => {
+    const ps = build('2026-01-01', [22, 28, 28, 28, 28, 28, 28]);
+    expect(windowStats(ps)).toMatchObject({ avgCycle: 28, minCycle: 28, cycleCount: 6 });
+    expect(forecast(ps)!.possibleFrom).toBeNull();
   });
-  it('если были только пропуски — средние по умолчанию', () => {
-    const s = yearStats([P('2026-01-01', '2026-01-05'), P('2026-06-01', '2026-06-05')], 2026);
-    expect(s).toMatchObject({ avgCycle: 28, spread: 0, cycleCount: 0 });
+  it('если циклов меньше 6 — по всем', () => {
+    expect(windowStats(build('2026-01-01', [26, 30])).cycleCount).toBe(2);
+  });
+  it('средние месячные — по последним 6 завершённым месячным', () => {
+    // Первые двое месячных по 9 дней выходят из окна, остаются шесть по 5
+    const ps = [...build('2026-01-01', [28], 9), ...build('2026-02-26', [28, 28, 28, 28, 28])];
+    expect(windowStats(ps).avgPeriod).toBe(5);
+  });
+});
+
+describe('нетипичные циклы (< 21 или > 45 дней)', () => {
+  it('границы: 21 и 45 — типичные, 20 и 46 — нет', () => {
+    expect([20, 21, 45, 46].map(isAtypical)).toEqual([true, false, false, true]);
+  });
+  // Циклы: 28, 10 (лишняя отметка), 28, 60 (пропуск), 30
+  const ps = build('2026-01-05', [28, 10, 28, 60, 30]);
+  it('не влияют на средний, минимум и разброс', () => {
+    expect(windowStats(ps)).toMatchObject({ avgCycle: 29, minCycle: 28, cycleCount: 3 });
+    expect(yearStats(ps, 2026)).toMatchObject({ avgCycle: 29, spread: 1, cycleCount: 3 });
+  });
+  it('прогноз строится по типичным циклам', () => {
+    const last = ps[ps.length - 1].start;
+    expect(forecast(ps)!.nextStart).toBe(addDays(last, 29));
+  });
+  it('если были только нетипичные — окно по умолчанию, год — «—»', () => {
+    const only = build('2026-01-01', [10, 60]);
+    expect(windowStats(only)).toMatchObject({ avgCycle: 28, minCycle: 28, cycleCount: 0 });
+    expect(yearStats(only, 2026)).toMatchObject({ avgCycle: null, spread: null, cycleCount: 0 });
+  });
+});
+
+describe('возможные дни и фертильное окно', () => {
+  // Циклы 21 и пять по 45 → средний round(246/6) = 41, мин 21
+  const ps = build('2026-01-01', [21, 45, 45, 45, 45, 45]);
+  const S = ps[ps.length - 1].start;
+  const today = addDays(S, 15);
+  it('при пересечении приоритет у фертильного окна и овуляции', () => {
+    // Возможные: S+21 … S+40; овуляция S+27, окно S+22 … S+28
+    expect(dayKind(ps, addDays(S, 21), today)).toBe('possible');
+    expect(dayKind(ps, addDays(S, 22), today)).toBe('fertile');
+    expect(dayKind(ps, addDays(S, 27), today)).toBe('ovulation');
+    expect(dayKind(ps, addDays(S, 28), today)).toBe('fertile');
+    expect(dayKind(ps, addDays(S, 29), today)).toBe('possible');
+    expect(dayKind(ps, addDays(S, 41), today)).toBe('forecast');
   });
 });
 
@@ -190,7 +255,7 @@ describe('месячные идут сейчас', () => {
     expect(f.currentEnd).toBe('2026-10-17');
   });
   it('незавершённые месячные не влияют на среднюю длину', () => {
-    expect(yearStats(periods, 2026)).toMatchObject({ avgPeriod: 5, periodCount: 1 });
+    expect(windowStats(periods)).toMatchObject({ avgPeriod: 5, periodCount: 1 });
   });
   it('календарь: отмечено по сегодня, дальше прогноз до конца', () => {
     expect(dayKind(periods, '2026-10-13', today)).toBe('period');
@@ -266,14 +331,12 @@ describe('переход через месяц и год', () => {
     expect(yearStats(p, 2026)).toMatchObject({ avgCycle: 27, cycleCount: 2 });
     expect(yearStats(p, 2027)).toMatchObject({ avgCycle: 30, cycleCount: 1 });
   });
-  it('в начале года без циклов текущего года — средние по умолчанию (строго текущий год)', () => {
-    const p = [P('2026-11-10', '2026-11-14'), P('2026-12-08', '2026-12-12')]; // цикл 28 в 2026
-    const p2 = [P('2026-11-01', '2026-11-03'), P('2026-12-05', '2026-12-07')]; // цикл 34 в 2026
-    expect(yearStats(p2, 2027)).toMatchObject({ avgCycle: 28, avgPeriod: 5, cycleCount: 0 });
-    // Прогноз 3 января 2027 строится по 28 дням от 5 дек, а не по 34
-    expect(forecast(p2, '2027-01-03')!.nextStart).toBe('2027-01-02');
-    // 2 января прошло, а месячные не начались → задержка 1 день
-    expect(status(p2, '2027-01-03')).toEqual({ kind: 'delay', days: 1 });
-    expect(status(p, '2027-01-03')).toEqual({ kind: 'until', days: 2 });
+  it('январь: прогноз по циклам прошлого года, без отката к 28/5', () => {
+    const p = build('2026-10-01', [30, 30]); // последние 30 ноя, циклы по 30 в 2026
+    expect(windowStats(p)).toMatchObject({ avgCycle: 30, cycleCount: 2 });
+    expect(forecast(p, '2027-01-03')!.nextStart).toBe('2026-12-30');
+    expect(status(p, '2027-01-03')).toEqual({ kind: 'delay', days: 4 });
+    // а статистика 2027 года пока пустая
+    expect(yearStats(p, 2027)).toMatchObject({ avgCycle: null, cycleCount: 0 });
   });
 });

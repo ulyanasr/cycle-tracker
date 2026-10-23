@@ -17,7 +17,7 @@ const dayMonth = (d: string) => shortDate(d).split(',')[0];
 
 function CycleCard({ c }: { c: HistoryCycle }) {
   // Пропуск в отметках: без полоски, в средние не входит
-  if (c.gap) {
+  if (c.atypical) {
     return (
       <li className="cycle-card is-gap">
         <div className="cycle-head">
@@ -98,7 +98,7 @@ export function History({ onBack }: { onBack: () => void }) {
           ) : (
             <ul className="archive-list">
               {years.map((y) => {
-                const n = yearCycles(periods, y, today).filter((c) => !c.gap).length;
+                const n = yearCycles(periods, y, today).filter((c) => !c.atypical).length;
                 return (
                   <li key={y}>
                     <button className="archive-item" onClick={() => setView({ kind: 'year', year: y })}>
@@ -117,18 +117,18 @@ export function History({ onBack }: { onBack: () => void }) {
             <div className="history-stats">
               <div className="h-stat is-indigo">
                 <span>Цикл</span>
-                <b>{stats.avgCycle}</b>
-                <small>{plural(stats.avgCycle, 'день', 'дня', 'дней')} в среднем</small>
+                <b>{stats.avgCycle ?? '—'}</b>
+                <small>{plural(stats.avgCycle ?? 0, 'день', 'дня', 'дней')} в среднем</small>
               </div>
               <div className="h-stat is-coral">
                 <span>Месячные</span>
-                <b>{stats.avgPeriod}</b>
-                <small>{plural(stats.avgPeriod, 'день', 'дня', 'дней')} в среднем</small>
+                <b>{stats.avgPeriod ?? '—'}</b>
+                <small>{plural(stats.avgPeriod ?? 0, 'день', 'дня', 'дней')} в среднем</small>
               </div>
               <div className="h-stat is-teal">
                 <span>Разброс</span>
-                <b>±{stats.spread}</b>
-                <small>{plural(stats.spread, 'день', 'дня', 'дней')}</small>
+                <b>{stats.spread === null ? '—' : `±${stats.spread}`}</b>
+                <small>{plural(stats.spread ?? 0, 'день', 'дня', 'дней')}</small>
               </div>
             </div>
           )}

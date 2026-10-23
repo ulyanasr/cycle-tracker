@@ -1,6 +1,6 @@
 // Что показать на главной — одной функцией, чтобы проверить тестами
-import { cycleDay, isAfterPeriod, lastPeriod, phaseOn, status, yearStats, type Phase, type Status } from './cycle';
-import { yearOf, type DateStr } from './dates';
+import { cycleDay, isAfterPeriod, lastPeriod, phaseOn, status, windowStats, type Phase, type Status } from './cycle';
+import type { DateStr } from './dates';
 import { AFTER_PERIOD_TEXT, BODY_TEXT, SPORT_TEXT } from './phaseTexts';
 import type { Period } from './types';
 
@@ -36,7 +36,7 @@ export function homeSummary(periods: Period[], today: DateStr): HomeSummary {
     phase,
     cycleDay: cycleDay(periods, today),
     status: status(periods, today),
-    avgCycle: yearStats(periods, yearOf(today)).avgCycle,
+    avgCycle: windowStats(periods).avgCycle,
     body: phase ? (isAfterPeriod(periods, today) ? AFTER_PERIOD_TEXT : BODY_TEXT[phase]) : null,
     sport: phase ? SPORT_TEXT[phase] : null,
     button: periodButton(periods, today),
