@@ -1,20 +1,11 @@
-// Правка месячных тапом по дню и кнопками «Начались» / «Закончились»
-// (раздел 4). Функции не меняют входной массив, а возвращают новый.
+// toggleDay и кнопки «Начались» / «Закончились» (раздел 4). Возвращают новый массив
+import { byStart, effectiveEnd } from './cycle';
 import { addDays, inRange, type DateStr } from './dates';
-import { effectiveEnd, sortPeriods } from './cycle';
 import type { Period } from './types';
 
 export type IdFn = () => string;
 const defaultId: IdFn = () => crypto.randomUUID();
 
-/**
- * Тап по дню:
- * - внутри месячных: крайний день снимается (укорачивает), средний — делит их на две части,
- *   единственный день удаляет месячные целиком;
- * - вплотную к месячным: продлевает их, а если день между двумя месячными — склеивает;
- * - далеко от любых месячных: новые месячные из одного дня;
- * - будущие дни не меняются.
- */
 export function toggleDay(
   periods: Period[],
   date: DateStr,
@@ -22,12 +13,11 @@ export function toggleDay(
   newId: IdFn = defaultId,
 ): Period[] {
   if (date > today) return periods;
-  const sorted = sortPeriods(periods);
+  const sorted = [...periods].sort(byStart);
 
   const inside = sorted.find((p) => inRange(date, p.start, effectiveEnd(p, today)));
   if (inside) return removeDay(sorted, inside, date, today, newId);
 
-  // Соседние месячные: закончились накануне и начинаются на следующий день
   const before = sorted.find((p) => p.end !== null && addDays(p.end, 1) === date);
   const after = sorted.find((p) => addDays(p.start, -1) === date);
 
@@ -51,7 +41,6 @@ function removeDay(
   const end = effectiveEnd(p, today);
   if (p.start === end) return sorted.filter((x) => x !== p);
   if (date === p.start) return replace(sorted, p, { ...p, start: addDays(date, 1) });
-  // Последний день (для идущих сейчас — сегодня): месячные закончились накануне
   if (date === end) return replace(sorted, p, { ...p, end: addDays(date, -1) });
 
   const first: Period = { id: p.id, start: p.start, end: addDays(date, -1) };
@@ -59,12 +48,9 @@ function removeDay(
   return sorted.filter((x) => x !== p).concat(first, second).sort(byStart);
 }
 
-/**
- * «Начались»: месячные с сегодняшнего дня, end = null.
- * Если вчера месячные закончились или сегодня уже отмечено — продолжаем их.
- */
+/** Если месячные закончились вчера или сегодня уже отмечено — продолжает их */
 export function startPeriod(periods: Period[], today: DateStr, newId: IdFn = defaultId): Period[] {
-  const sorted = sortPeriods(periods);
+  const sorted = [...periods].sort(byStart);
   if (sorted.some((p) => p.end === null)) return sorted;
   const touching = sorted.find(
     (p) => p.end !== null && p.start <= today && addDays(p.end, 1) >= today,
@@ -73,12 +59,10 @@ export function startPeriod(periods: Period[], today: DateStr, newId: IdFn = def
   return [...sorted, { id: newId(), start: today, end: null }].sort(byStart);
 }
 
-/** «Закончились»: у идущих сейчас месячных end = сегодня */
 export function finishPeriod(periods: Period[], today: DateStr): Period[] {
-  const sorted = sortPeriods(periods);
+  const sorted = [...periods].sort(byStart);
   const ongoing = sorted.find((p) => p.end === null);
   return ongoing ? replace(sorted, ongoing, { ...ongoing, end: today }) : sorted;
 }
 
-const byStart = (a: Period, b: Period) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0);
 const replace = (list: Period[], from: Period, to: Period) => list.map((p) => (p === from ? to : p));

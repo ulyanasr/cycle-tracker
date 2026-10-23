@@ -11,7 +11,7 @@ import { cycleDay, isPeriodDay, phaseOn } from '../logic/cycle';
 import { toDate, type DateStr } from '../logic/dates';
 import { capitalize } from '../logic/months';
 import { toggleDay } from '../logic/periods';
-import { PHASE_NAME } from '../logic/phaseTexts';
+import { PHASE_TITLE } from '../logic/phaseTexts';
 import { FLOW_LABEL, FLOWS, MOODS } from '../logic/scales';
 import type { DayLog, Flow, Period } from '../logic/types';
 import { Chips, draftToMed, MedsField, ScaleField, Toggle, type MedDraft } from './diary/fields';
@@ -84,7 +84,7 @@ function DiaryForm({
 
   const day = cycleDay(periods, date);
   const phase = phaseOn(periods, date, today);
-  const subtitle = [day && `${day}-й день`, phase && PHASE_NAME[phase]].filter(Boolean).join(' · ');
+  const subtitle = [day && `${day}-й день`, phase && PHASE_TITLE[phase].toLowerCase()].filter(Boolean).join(' · ');
 
   const save = async () => {
     const pending = draftToMed(medDraft);

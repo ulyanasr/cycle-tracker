@@ -1,17 +1,14 @@
-/**
- * Подсказки при вводе названия лекарства из ранее введённых.
- * Без учёта регистра; сначала те, что начинаются с введённого, потом
- * содержащие его. Точное совпадение не подсказываем — оно уже введено.
- */
+const lower = (s: string) => s.toLocaleLowerCase('ru');
+
+/** Сначала названия, начинающиеся с введённого; точное совпадение не подсказываем */
 export function suggestMeds(known: string[], query: string, limit = 5): string[] {
-  const q = query.trim().toLocaleLowerCase('ru');
+  const q = lower(query.trim());
   if (!q) return known.slice(0, limit);
-  const lower = (s: string) => s.toLocaleLowerCase('ru');
-  const starts = known.filter((n) => lower(n).startsWith(q) && lower(n) !== q);
-  const contains = known.filter((n) => !lower(n).startsWith(q) && lower(n).includes(q));
-  return [...starts, ...contains].slice(0, limit);
+  const hits = known.filter((n) => lower(n) !== q && lower(n).includes(q));
+  const starts = (n: string) => lower(n).startsWith(q);
+  return [...hits.filter(starts), ...hits.filter((n) => !starts(n))].slice(0, limit);
 }
 
-/** «400 мг · 09:30» — только заполненное */
+/** «400 мг · 09:30» */
 export const medDetails = (m: { dose?: string; time?: string }) =>
   [m.dose, m.time].filter(Boolean).join(' · ');

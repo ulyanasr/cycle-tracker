@@ -3,16 +3,13 @@ import { cycleDay, isPeriodDay } from './cycle';
 import { toDate, yearOf, type DateStr } from './dates';
 import { medDetails } from './meds';
 import { capitalize, monthName, monthOf } from './months';
-import { FLOW_LABEL } from './scales';
+import { FLOW_LABEL, SCALE_TITLE, type ScaleKind } from './scales';
 import type { DayLog, Period, Score } from './types';
 
 export type NotesFilter = 'all' | 'pain' | 'meds';
 
-/**
- * Краткие подписи баллов для карточки: «3 — заметная».
- * Это начало подписи из раздела 7 — до запятой или двоеточия.
- */
-export const SHORT_LABELS: Record<'pain' | 'pms' | 'wellbeing', Record<Score, string>> = {
+/** «3 — заметная»: начало подписи из раздела 7, до запятой или двоеточия */
+export const SHORT_LABELS: Record<ScaleKind, Record<Score, string>> = {
   pain: { 1: 'почти не чувствую', 2: 'лёгкая', 3: 'заметная', 4: 'сильная', 5: 'очень сильная' },
   pms: { 1: 'почти нет', 2: 'лёгкие проявления', 3: 'заметно мешает', 4: 'сильно влияет', 5: 'выбивает из жизни' },
   wellbeing: { 1: 'отлично', 2: 'хорошо', 3: 'так себе', 4: 'плохо', 5: 'очень плохо' },
@@ -50,10 +47,9 @@ const joinMoods = (moods: string[]) =>
 export function noteRows(log: DayLog): NoteRow[] {
   const rows: NoteRow[] = [];
   if (log.flow) rows.push({ label: 'Месячные', kind: 'text', text: FLOW_LABEL[log.flow] });
-  if (log.pain) rows.push({ label: 'Боль', kind: 'score', score: log.pain, text: SHORT_LABELS.pain[log.pain] });
-  if (log.pms) rows.push({ label: 'ПМС', kind: 'score', score: log.pms, text: SHORT_LABELS.pms[log.pms] });
-  if (log.wellbeing) {
-    rows.push({ label: 'Самочувствие', kind: 'score', score: log.wellbeing, text: SHORT_LABELS.wellbeing[log.wellbeing] });
+  for (const k of ['pain', 'pms', 'wellbeing'] as const) {
+    const score = log[k];
+    if (score) rows.push({ label: SCALE_TITLE[k], kind: 'score', score, text: SHORT_LABELS[k][score] });
   }
   if (log.moods?.length) rows.push({ label: 'Состояние', kind: 'text', text: joinMoods(log.moods) });
   if (log.meds?.length) {
@@ -67,10 +63,10 @@ export function noteRows(log: DayLog): NoteRow[] {
 const matches = (log: DayLog, filter: NotesFilter) =>
   filter === 'all' || (filter === 'pain' ? !!log.pain : !!log.meds?.length);
 
-/** Группы по месяцам, новые сверху. Пустые записи не показываем */
+/** По месяцам, новые сверху */
 export function notesFeed(logs: DayLog[], periods: Period[], today: DateStr, filter: NotesFilter): NoteGroup[] {
   const groups: NoteGroup[] = [];
-  const sorted = [...logs].filter((l) => matches(l, filter)).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const sorted = logs.filter((l) => matches(l, filter)).sort((a, b) => b.date.localeCompare(a.date));
   for (const log of sorted) {
     const rows = noteRows(log);
     if (!rows.length) continue;

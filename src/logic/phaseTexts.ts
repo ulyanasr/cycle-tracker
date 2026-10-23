@@ -8,14 +8,6 @@ export const PHASE_TITLE: Record<Phase, string> = {
   luteal: 'Лютеиновая фаза',
 };
 
-/** В подзаголовке дневника: «17-й день · лютеиновая фаза» */
-export const PHASE_NAME: Record<Phase, string> = {
-  menstrual: 'менструальная фаза',
-  follicular: 'фолликулярная фаза',
-  ovulatory: 'овуляторная фаза',
-  luteal: 'лютеиновая фаза',
-};
-
 export const BODY_TEXT: Record<Phase, string> = {
   menstrual: 'Возможны спазмы, усталость, энергии меньше.',
   follicular: 'Энергия растёт, восстановление быстрее.',

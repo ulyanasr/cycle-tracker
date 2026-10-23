@@ -16,8 +16,7 @@ export const diffDays = (b: DateStr, a: DateStr): number =>
 
 export const yearOf = (s: DateStr): number => Number(s.slice(0, 4));
 
-// Строки одного формата сравниваются как даты
-export const isBefore = (a: DateStr, b: DateStr) => a < b;
+// Строки 'YYYY-MM-DD' сравниваются как даты
 export const inRange = (d: DateStr, from: DateStr, to: DateStr) => d >= from && d <= to;
 
 /** Сегодня по часам устройства */

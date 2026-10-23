@@ -52,7 +52,7 @@ export function Home({ onMenu, onOpenDay }: Props) {
   const [editing, setEditing] = useState(false);
 
   const summary = useMemo(() => homeSummary(periods, today), [periods, today]);
-  const f = useMemo(() => forecast(periods, today), [periods, today]);
+  const f = useMemo(() => forecast(periods), [periods]);
   const { label, value } = statusText(summary.status);
 
   const onTapDay = (date: DateStr) => {
